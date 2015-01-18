@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<!--Изменить Assembly и Namespace-->
+<hibernate-mapping xmlns="urn:nhibernate-mapping-2.2" assembly="MyMail" namespace="MyMail.Models.Entities">
+  <class name="Mail" table="Mails">
+    <id name="Id" column="Id">
+      <generator class="native"/>
+    </id>
+    <property name="Uid" column="Uid"/>
+    <property name="MailState" column="State" type="StateType"/>
+    <set name="Attachments" table="Attachments" cascade="all-delete-orphan">
+      <key column="MailId"/>
+      <one-to-many class="Attachment"/>
+    </set>
+    <many-to-one name="MailAccount" column="AccountId" class="Account"/>
+  </class>
+</hibernate-mapping>

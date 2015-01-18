@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<!--Изменить assembly и namespace-->
+<hibernate-mapping xmlns="urn:nhibernate-mapping-2.2" assembly="MyMail" namespace="MyMail.Models.Entities">
+  <class name="User" table="Users">
+    <id name="Id" type="Int32" unsaved-value="2">
+      <generator class="native"/>
+    </id>
+    <property name="Login" column="UserLogin"/>
+    <property name="Password" column="UserPassword"/>
+    <set name="Accounts" table="Accounts" cascade="all-delete-orphan">
+      <key column="Id" foreign-key="UserId"/>
+      <one-to-many class="Account"/>
+    </set>
+  </class>
+</hibernate-mapping>

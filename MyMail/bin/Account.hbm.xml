@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<!--Изменить Assembly и Namespace-->
+<hibernate-mapping xmlns="urn:nhibernate-mapping-2.2" assembly="MyMail" namespace="MyMail.Models.Entities">
+  <class name="Account" table="Accounts">
+    <id name="Id" column="Id">
+      <generator class="native"/>
+    </id>
+    <property name="ServerHost" column="ServerHost"/>
+    <property name="ServerPort" column="ServerPort"/>
+    <property name="LocalPath" column="LocalPath"/>
+    <property name="MailAddress" column="MailAddress"/>
+    <property name="MailPassword" column="MailPassword"/>
+    <set name="Mails" table="Mail" cascade="all-delete-orphan">
+      <key column="AccountId"/>
+      <one-to-many class="Mail"/>
+    </set>
+    <many-to-one name="AccountUser" column="UserId" class="User"/>
+  </class>
+</hibernate-mapping>

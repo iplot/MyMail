@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<!--Изменить Assembly и Namespace-->
+<hibernate-mapping xmlns="urn:nhibernate-mapping-2.2" assembly="MyMail" namespace="MyMail.Models.Entities">
+  <class name="Attachment" table="Attachments">
+    <id name="Id" column="Id">
+      <generator class="native"/>
+    </id>
+    <property name="FileName" column="FileName"/>
+    <many-to-one name="MailOwner" column="MailId" class="Mail"/>
+  </class>
+</hibernate-mapping>

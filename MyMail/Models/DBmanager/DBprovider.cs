@@ -27,11 +27,38 @@ namespace MyMail.Models.DBmanager
             {
                 using (var transaction = session.BeginTransaction())
                 {
-                    User[] user = (from us in session.Query<User>() where us.Login.Equals(login) select us).ToArray();
+                    User[] user = 
+                        (from us in session.Query<User>() where us.Login.Equals(login) select us).ToArray();
+
                     return user.Length == 0 ? null : user.First();
                 }
             }
         }
+
+        public Account GetAccount(string email)
+        {
+            using (var session = _sessionFactory.OpenSession())
+            {
+                using (var transaction = session.BeginTransaction())
+                {
+                    Account[] account =
+                        (from acc in session.Query<Account>() where acc.MailAddress == email select acc).ToArray();
+
+                    return account.Length == 0 ? null : account.First();
+                }
+            }
+        }
+
+        public IEnumerable<Account> GetUsersAccounts(string login)
+        {
+            using (var session = _sessionFactory.OpenSession())
+            {
+                using (var transaction = session.BeginTransaction())
+                {
+                    return (from acc in session.Query<Account>() where acc.AccountUser.Login == login select acc).ToArray();
+                }
+            }
+        } 
 
         public void SaveObject(Object user)
         {

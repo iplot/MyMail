@@ -132,6 +132,8 @@
     <Compile Include="Models\DBmanager\Entities\Mail.cs" />
     <Compile Include="Models\DBmanager\Entities\User.cs" />
     <Compile Include="Models\DBmanager\IDBprovider.cs" />
+    <Compile Include="Models\IServiceManager.cs" />
+    <Compile Include="Models\ServiceManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -139,6 +141,7 @@
     <Content Include="packages.config" />
     <Content Include="Views\Account\Login.cshtml" />
     <Content Include="Views\Account\SignUp.cshtml" />
+    <Content Include="Views\Home\Index.cshtml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
@@ -148,7 +151,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
-    <Folder Include="Views\Home\" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
+using MyMail.Models;
 using MyMail.Models.DBmanager;
 using Ninject;
 
@@ -32,6 +33,7 @@ namespace MyMail.Infrastructure
         private void _bind()
         {
             _kernel.Bind<IDBprovider>().To<DBprovider>();
+            _kernel.Bind<IServiceManager>().To<ServiceManager>();
         }
     }
 }

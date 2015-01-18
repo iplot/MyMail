@@ -4,6 +4,7 @@ using System.Linq;
 using System.Web;
 using System.Web.Mvc;
 using System.Web.Security;
+using MyMail.Models;
 using MyMail.Models.DBmanager;
 using MyMail.Models.Entities;
 
@@ -11,11 +12,13 @@ namespace MyMail.Controllers
 {
     public class AccountController : Controller
     {
-        private readonly IDBprovider _provider;
+        private readonly IServiceManager _provider;
 
-        public AccountController(IDBprovider providerArg)
+        public AccountController(IServiceManager providerArg)
         {
             _provider = providerArg;
+
+            System.Web.HttpContext.Current.Session["ServiceManager"] = providerArg;
         }
 
         // GET: Account
@@ -27,11 +30,11 @@ namespace MyMail.Controllers
         [HttpPost]
         public ActionResult Login(string login, string password)
         {
-            var user = _provider.GetUser(login);
-
-            if (user != null && user.Password == password)
+            if (_provider.IsUserPresent(login, password))
             {
                 FormsAuthentication.SetAuthCookie(login, false);
+                System.Web.HttpContext.Current.Session["Login"] = login;
+
                 return RedirectToAction("Index", "Home");
             }
             else
@@ -49,21 +52,16 @@ namespace MyMail.Controllers
         [HttpPost]
         public ActionResult SignUp(string login, string password)
         {
-            try
+            //Если логин уже есть в системе, ничего не делать и вернуть пользователя обратно к форме
+            if(_provider.AddUser(login, password))
             {
-                User user = new User
-                {
-                    Login = login,
-                    Password = password
-                };
-
-                _provider.SaveObject(user);
+                System.Web.HttpContext.Current.Session["Login"] = login;
 
                 FormsAuthentication.SetAuthCookie(login, false);
 
                 return RedirectToAction("Index", "Home");
             }
-            catch(Exception)
+            else
             {
                 return View();
             }

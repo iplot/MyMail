@@ -4,6 +4,7 @@ using System.Linq;
 using System.Web;
 using System.Web.Mvc;
 using System.Web.Security;
+using MyMail.Infrastructure;
 using MyMail.Models;
 using MyMail.Models.DBmanager;
 using MyMail.Models.Entities;
@@ -28,12 +29,12 @@ namespace MyMail.Controllers
         }
 
         [HttpPost]
-        public ActionResult Login(string login, string password)
+        public ActionResult Login(User user)
         {
-            if (_provider.IsUserPresent(login, password))
+            if (ModelState.IsValid && _provider.IsUserPresent(user.Login, user.Password))
             {
-                FormsAuthentication.SetAuthCookie(login, false);
-                System.Web.HttpContext.Current.Session["Login"] = login;
+                FormsAuthentication.SetAuthCookie(user.Login, false);
+                System.Web.HttpContext.Current.Session["Login"] = user.Login;
 
                 return RedirectToAction("Index", "Home");
             }
@@ -50,19 +51,45 @@ namespace MyMail.Controllers
 
         //Заменить параметры на модель и наложить Validation на свойства (а может и ненадо, решу еще)
         [HttpPost]
-        public ActionResult SignUp(string login, string password)
+        public ActionResult SignUp(User user)
         {
             //Если логин уже есть в системе, ничего не делать и вернуть пользователя обратно к форме
-            if(_provider.AddUser(login, password))
+            if(ModelState.IsValid && _provider.AddUser(user))
             {
-                System.Web.HttpContext.Current.Session["Login"] = login;
+                System.Web.HttpContext.Current.Session["Login"] = user.Login;
 
-                FormsAuthentication.SetAuthCookie(login, false);
+                FormsAuthentication.SetAuthCookie(user.Login, false);
 
                 return RedirectToAction("Index", "Home");
             }
             else
             {
+                return View();
+            }
+        }
+
+        //------------------------------------------------------------
+        //Server accounts
+        //------------------------------------------------------------
+
+        public ActionResult AddServerAccount()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public ActionResult AddServerAccount(Account acc)
+        {
+            if (!ModelState.IsValid)
+                return View();
+
+            if (_provider.AddAccount(acc, (string) System.Web.HttpContext.Current.Session["Login"]))
+            {
+                return RedirectToAction("Index", "Home");
+            }
+            else
+            {
+                ModelState.AddModelError("", "Such e-mail is already exists");
                 return View();
             }
         }

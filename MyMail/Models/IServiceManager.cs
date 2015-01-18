@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using MyMail.Models.Entities;
 
 namespace MyMail.Models
 {
@@ -10,5 +11,7 @@ namespace MyMail.Models
         string GetCurentAccountEmail();
         IEnumerable<string> GetUsersAccountEmails(string login);
         bool TrySetCurentAcount(string login);
+        bool AddAccount(Account account, string login);
+        bool AddUser(User user);
     }
 }

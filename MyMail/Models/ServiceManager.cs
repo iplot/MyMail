@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using MyMail.Models.DBmanager;
+using MyMail.Models.DriveManager;
 using MyMail.Models.Entities;
 
 namespace MyMail.Models
@@ -10,12 +11,14 @@ namespace MyMail.Models
     public class ServiceManager : IServiceManager
     {
         private IDBprovider _dBprovider;
+        private IDriveAccesProvider _driveProvider;
 
         private Account _curentAccount;
 
-        public ServiceManager(IDBprovider providerParam)
+        public ServiceManager(IDBprovider providerParam, IDriveAccesProvider driveProvider_param)
         {
             _dBprovider = providerParam;
+            _driveProvider = driveProvider_param;
         }
 
         public bool IsUserPresent(string login, string password)
@@ -40,6 +43,20 @@ namespace MyMail.Models
                 Password = password
             };
 
+            try
+            {
+                _dBprovider.SaveObject(user);
+
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        public bool AddUser(User user)
+        {
             try
             {
                 _dBprovider.SaveObject(user);
@@ -79,6 +96,31 @@ namespace MyMail.Models
             {
                 _curentAccount = accounts.First();
                 return true;
+            }
+        }
+
+        public bool AddAccount(Account account, string login)
+        {
+            try
+            {
+                User user = _dBprovider.GetUser(login);
+
+                account.AccountUser = user;
+
+                account.LocalPath = _driveProvider.addAccountFolder(account.MailAddress);
+
+                _dBprovider.SaveObject(account);
+
+                if (_curentAccount == null)
+                {
+                    _curentAccount = account;
+                }
+
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
             }
         }
     }

@@ -2,20 +2,17 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Web;
 
 namespace MyMail.Models.Entities
 {
-    [MetadataType(typeof(UserMetaData))]
-    public partial class User
+    public partial class UserMetaData
     {
-        public virtual int Id { get; set; }
-
+        [Required]
         public virtual string Login { get; set; }
 
+        [Required]
+        [UIHint("Password")]
         public virtual string Password { get; set; }
-
-        public virtual IEnumerable<Account> Accounts { get; set; } 
     }
 }

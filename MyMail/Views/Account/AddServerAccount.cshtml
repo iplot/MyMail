@@ -1,0 +1,32 @@
+﻿@using MyMail.Models.Entities
+@model Account
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>AddServerAccount</title>
+</head>
+<body>
+<h2>Add new ServerAccount</h2>
+
+<div>
+    @using (@Html.BeginForm())
+    {
+        @Html.ValidationSummary()
+        
+        <p><label>Server Host: </label> @Html.EditorFor(m => m.ServerHost)</p>
+        <p><label>Server Port: </label> @Html.EditorFor(m => m.ServerPort)</p>
+        <p><label>Mail Address: </label> @Html.EditorFor(m => m.MailAddress)</p>
+        <p><label>Mail Password: </label> @Html.EditorFor(m => m.MailPassword)</p>
+        
+        <input type="submit" value="Submit"/>
+    }
+</div>
+
+</body>
+</html>

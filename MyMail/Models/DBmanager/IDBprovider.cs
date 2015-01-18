@@ -8,7 +8,7 @@ namespace MyMail.Models.DBmanager
     {
         User GetUser(string login);
         Account GetAccount(string email);
-        void SaveObject(Object user);
+        void SaveObject(Object obj);
         IEnumerable<Account> GetUsersAccounts(string login);
     }
 }

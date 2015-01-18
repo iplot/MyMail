@@ -130,8 +130,12 @@
     <Compile Include="Models\DBmanager\Entities\Account.cs" />
     <Compile Include="Models\DBmanager\Entities\Attachment.cs" />
     <Compile Include="Models\DBmanager\Entities\Mail.cs" />
+    <Compile Include="Models\DBmanager\Entities\Metadata\AccountMetaData.cs" />
+    <Compile Include="Models\DBmanager\Entities\Metadata\UserMetaData.cs" />
     <Compile Include="Models\DBmanager\Entities\User.cs" />
     <Compile Include="Models\DBmanager\IDBprovider.cs" />
+    <Compile Include="Models\DriveManager\DriveAccesProvider.cs" />
+    <Compile Include="Models\DriveManager\IDriveAccesProvider.cs" />
     <Compile Include="Models\IServiceManager.cs" />
     <Compile Include="Models\ServiceManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -142,6 +146,7 @@
     <Content Include="Views\Account\Login.cshtml" />
     <Content Include="Views\Account\SignUp.cshtml" />
     <Content Include="Views\Home\Index.cshtml" />
+    <Content Include="Views\Account\AddServerAccount.cshtml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
@@ -151,6 +156,8 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
+    <Folder Include="Infrastructure\NewFolder1\" />
+    <Folder Include="Views\ServerAccount\" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

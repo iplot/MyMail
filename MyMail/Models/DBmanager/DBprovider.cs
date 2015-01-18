@@ -60,13 +60,13 @@ namespace MyMail.Models.DBmanager
             }
         } 
 
-        public void SaveObject(Object user)
+        public void SaveObject(Object obj)
         {
             using (var session = _sessionFactory.OpenSession())
             {
                 using (var transaction = session.BeginTransaction())
                 {
-                    session.Save(user);
+                    session.Save(obj);
                     transaction.Commit();
                 }
             }

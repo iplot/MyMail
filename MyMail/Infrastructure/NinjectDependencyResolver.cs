@@ -5,6 +5,7 @@ using System.Web;
 using System.Web.Mvc;
 using MyMail.Models;
 using MyMail.Models.DBmanager;
+using MyMail.Models.DriveManager;
 using Ninject;
 
 namespace MyMail.Infrastructure
@@ -33,7 +34,12 @@ namespace MyMail.Infrastructure
         private void _bind()
         {
             _kernel.Bind<IDBprovider>().To<DBprovider>();
+
             _kernel.Bind<IServiceManager>().To<ServiceManager>();
+
+            _kernel.Bind<IDriveAccesProvider>()
+                .To<DriveAccesProvider>()
+                .WithConstructorArgument("rootFolderPath", "D:\\TestData\\MyMail");
         }
     }
 }

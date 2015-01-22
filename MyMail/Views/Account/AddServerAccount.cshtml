@@ -19,8 +19,10 @@
     {
         @Html.ValidationSummary()
         
-        <p><label>Server Host: </label> @Html.EditorFor(m => m.ServerHost)</p>
-        <p><label>Server Port: </label> @Html.EditorFor(m => m.ServerPort)</p>
+        <p><label>SMTP Server Host: </label> @Html.EditorFor(m => m.SmtpServerHost)</p>
+        <p><label>SMTP Server Port: </label> @Html.EditorFor(m => m.SmtpServerPort)</p>
+        <p><label>POP3 Server Host: </label> @Html.EditorFor(m => m.Pop3ServerHost)</p>
+        <p><label>POP3 Server Port: </label> @Html.EditorFor(m => m.Pop3ServerPort)</p>
         <p><label>Mail Address: </label> @Html.EditorFor(m => m.MailAddress)</p>
         <p><label>Mail Password: </label> @Html.EditorFor(m => m.MailPassword)</p>
         

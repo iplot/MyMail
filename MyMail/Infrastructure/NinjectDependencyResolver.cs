@@ -6,6 +6,8 @@ using System.Web.Mvc;
 using MyMail.Models;
 using MyMail.Models.DBmanager;
 using MyMail.Models.DriveManager;
+using NetWork.MailReciever;
+using NetWork.MailSender;
 using Ninject;
 
 namespace MyMail.Infrastructure
@@ -40,6 +42,10 @@ namespace MyMail.Infrastructure
             _kernel.Bind<IDriveAccesProvider>()
                 .To<DriveAccesProvider>()
                 .WithConstructorArgument("rootFolderPath", "D:\\TestData\\MyMail");
+
+            _kernel.Bind<ISender>().To<MailSender>();
+
+            _kernel.Bind<IResiever>().To<MailResiever>();
         }
     }
 }

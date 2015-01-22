@@ -9,10 +9,16 @@ namespace MyMail.Models.Entities
     public partial class AccountMetaData
     {
         [Required]
-        public virtual string ServerHost { get; set; }
+        public virtual string SmtpServerHost { get; set; }
 
         [Required]
-        public virtual int ServerPort { get; set; }
+        public virtual int SmtpServerPort { get; set; }
+
+        [Required]
+        public virtual string Pop3ServerHost { get; set; }
+
+        [Required]
+        public virtual int Pop3ServerPort { get; set; }
 
         [Required]
         public virtual string MailAddress { get; set; }

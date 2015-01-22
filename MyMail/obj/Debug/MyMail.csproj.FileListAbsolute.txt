@@ -32,3 +32,6 @@ D:\GitRepos\MyMail\MyMail\bin\WebActivatorEx.dll
 D:\GitRepos\MyMail\MyMail\bin\Ninject.xml
 D:\GitRepos\MyMail\MyMail\bin\Ninject.Web.Common.xml
 D:\GitRepos\MyMail\MyMail\bin\Ninject.Web.Mvc.xml
+D:\GitRepos\MyMail\MyMail\bin\NetWork.dll
+D:\GitRepos\MyMail\MyMail\bin\OpenPop.dll
+D:\GitRepos\MyMail\MyMail\bin\NetWork.pdb

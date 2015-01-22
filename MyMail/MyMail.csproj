@@ -42,6 +42,9 @@
       <HintPath>..\packages\Iesi.Collections.4.0.0.4000\lib\net40\Iesi.Collections.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
+    <Reference Include="NetWork">
+      <HintPath>..\..\NetWork\NetWork\bin\Debug\NetWork.dll</HintPath>
+    </Reference>
     <Reference Include="NHibernate">
       <HintPath>..\packages\NHibernate.4.0.2.4000\lib\net40\NHibernate.dll</HintPath>
     </Reference>
@@ -156,7 +159,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
-    <Folder Include="Infrastructure\NewFolder1\" />
     <Folder Include="Views\ServerAccount\" />
   </ItemGroup>
   <PropertyGroup>

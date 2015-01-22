@@ -22,6 +22,8 @@ namespace MyMail.Controllers
             System.Web.HttpContext.Current.Session["ServiceManager"] = providerArg;
         }
 
+        //Проверки на уникальность поля можно вынести на модели!
+
         // GET: Account
         public ActionResult Login()
         {
@@ -31,7 +33,10 @@ namespace MyMail.Controllers
         [HttpPost]
         public ActionResult Login(User user)
         {
-            if (ModelState.IsValid && _provider.IsUserPresent(user.Login, user.Password))
+            if (!ModelState.IsValid)
+                return View();
+
+            if (_provider.IsUserPresent(user.Login, user.Password))
             {
                 FormsAuthentication.SetAuthCookie(user.Login, false);
                 System.Web.HttpContext.Current.Session["Login"] = user.Login;
@@ -40,6 +45,7 @@ namespace MyMail.Controllers
             }
             else
             {
+                ModelState.AddModelError("", "There are no such user in the system. Please, repeat or SignUp");
                 return RedirectToAction("Login");
             }
         }
@@ -53,8 +59,11 @@ namespace MyMail.Controllers
         [HttpPost]
         public ActionResult SignUp(User user)
         {
+            if (!ModelState.IsValid)
+                return View();
+
             //Если логин уже есть в системе, ничего не делать и вернуть пользователя обратно к форме
-            if(ModelState.IsValid && _provider.AddUser(user))
+            if(_provider.AddUser(user))
             {
                 System.Web.HttpContext.Current.Session["Login"] = user.Login;
 
@@ -64,6 +73,7 @@ namespace MyMail.Controllers
             }
             else
             {
+                ModelState.AddModelError("", "Login is already exists");
                 return View();
             }
         }

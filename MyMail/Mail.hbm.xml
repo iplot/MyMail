@@ -7,7 +7,7 @@
     </id>
     <property name="Uid" column="Uid"/>
     <property name="MailState" column="State" type="StateType"/>
-    <set name="Attachments" table="Attachments" cascade="all-delete-orphan">
+    <set name="Attachments" table="Attachments" cascade="all-delete-orphan" lazy="false">
       <key column="MailId"/>
       <one-to-many class="Attachment"/>
     </set>

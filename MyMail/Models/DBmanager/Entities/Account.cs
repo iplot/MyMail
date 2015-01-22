@@ -12,9 +12,13 @@ namespace MyMail.Models.Entities
     {
         public virtual int Id { get; set; }
 
-        public virtual string ServerHost { get; set; }
+        public virtual string SmtpServerHost { get; set; }
 
-        public virtual int ServerPort { get; set; }
+        public virtual int SmtpServerPort { get; set; }
+
+        public virtual string Pop3ServerHost { get; set; }
+
+        public virtual int Pop3ServerPort { get; set; }
 
         public virtual string LocalPath { get; set; }
 

@@ -5,12 +5,14 @@
     <id name="Id" column="Id">
       <generator class="native"/>
     </id>
-    <property name="ServerHost" column="ServerHost"/>
-    <property name="ServerPort" column="ServerPort"/>
+    <property name="SmtpServerHost" column="SmtpServerHost"/>
+    <property name="SmtpServerPort" column="SmtpServerPort"/>
+    <property name="Pop3ServerHost" column="Pop3ServerHost"/>
+    <property name="Pop3ServerPort" column="Pop3ServerPort"/>
     <property name="LocalPath" column="LocalPath"/>
     <property name="MailAddress" column="MailAddress"/>
     <property name="MailPassword" column="MailPassword"/>
-    <set name="Mails" table="Mail" cascade="all-delete-orphan">
+    <set name="Mails" table="Mail" cascade="all-delete-orphan" lazy="false">
       <key column="AccountId"/>
       <one-to-many class="Mail"/>
     </set>

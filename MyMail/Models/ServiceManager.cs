@@ -22,7 +22,9 @@ namespace MyMail.Models
         private IResiever _mailResiever;
 
         private Account _curentAccount;
-        private List<Message_obj> _incomingMessages; 
+        private List<Message_obj> _localMessages;
+
+        private Thread _backgroundListener;
 
         public ServiceManager(IDBprovider providerParam, IDriveAccesProvider driveProvider_param, 
             ISender sender, IResiever resiever)
@@ -31,6 +33,10 @@ namespace MyMail.Models
             _driveProvider = driveProvider_param;
             _mailSender = sender;
             _mailResiever = resiever;
+
+            //По другому пока не знаю
+            _backgroundListener = new Thread(new ThreadStart(_startListen));
+            _backgroundListener.IsBackground = true;
         }
 
         public bool IsUserPresent(string login, string password)
@@ -101,7 +107,8 @@ namespace MyMail.Models
         {
             var accounts = _dBprovider.GetUsersAccounts(login).ToArray();
 
-            if (accounts.Length == 0)
+            //Если уже есть аккаунт, то новый не надо
+            if (accounts.Length == 0 || _curentAccount != null)
             {
                 return false;
             }
@@ -109,23 +116,26 @@ namespace MyMail.Models
             {
                 _curentAccount = accounts.First();
 
-                //--------------------------------------------------------------------------------------
-                _mailSender.SetServer(_curentAccount.SmtpServerHost, _curentAccount.SmtpServerPort);
-                _mailSender.SetCredentials(_curentAccount.MailAddress, _curentAccount.MailPassword);
+                _customiseServerWorkers();
 
-                _mailResiever.SetServer(_curentAccount.Pop3ServerHost, _curentAccount.Pop3ServerPort);
-                _mailResiever.SetCredentials(_curentAccount.MailAddress, _curentAccount.MailPassword);
-                //--------------------------------------------------------------------------------------
+                //Cтоит подумать о асинхронности
+                _localMessages = _getSavedMessages(State.Incoming).ToList();
 
-                _incomingMessages = _getSavedMessages(State.Incoming).ToList();
-
-                //По другому пока не знаю
-                Thread thread = new Thread(new ThreadStart(_startListen));
-                thread.IsBackground = true;
-                thread.Start();
+                //Если слушатель не работает - включить
+                if(!_backgroundListener.IsAlive)
+                    _backgroundListener.Start();
 
                 return true;
             }
+        }
+
+        private void _customiseServerWorkers()
+        {
+            _mailSender.SetServer(_curentAccount.SmtpServerHost, _curentAccount.SmtpServerPort);
+            _mailSender.SetCredentials(_curentAccount.MailAddress, _curentAccount.MailPassword);
+
+            _mailResiever.SetServer(_curentAccount.Pop3ServerHost, _curentAccount.Pop3ServerPort);
+            _mailResiever.SetCredentials(_curentAccount.MailAddress, _curentAccount.MailPassword);
         }
 
         public bool AddAccount(Account account, string login)
@@ -143,6 +153,15 @@ namespace MyMail.Models
                 if (_curentAccount == null)
                 {
                     _curentAccount = account;
+
+                    _customiseServerWorkers();
+
+                    //async
+                    _localMessages = _getSavedMessages(State.Incoming).ToList();
+
+                    //Возможно лишнее
+                    if(!_backgroundListener.IsAlive)
+                        _backgroundListener.Start();
                 }
 
                 return true;
@@ -153,7 +172,9 @@ namespace MyMail.Models
             }
         }
 
-        //In test!!!!
+        //Возможно сделать асинхронным
+        //Внутреннее получение писем. Когда выбирается аккаунт надо загрузить уже записанные письма
+        //Не путать с получением писем для выдачи пользователю
         private IEnumerable<Message_obj> _getSavedMessages(State state)
         {
             if (_curentAccount.Mails.ToArray().Length == 0)
@@ -169,73 +190,78 @@ namespace MyMail.Models
             return mails;
         }
 
-        //!!!!!
-        private Task _listenOnMails()
+        private void _listenOnMails()
         {
-            return Task.Factory.StartNew(() =>
+            var uids = _curentAccount.Mails.Where(m => m.MailState == State.Incoming).Select(m => m.Uid);
+
+            IEnumerable<Message_obj> incoming = _mailResiever.GetIncomingMails(uids);
+
+            int i = 0;
+            foreach (Message_obj message in incoming)
             {
-                var uids = _curentAccount.Mails.Where(m => m.MailState == State.Incoming).Select(m => m.Uid);
-
-                IEnumerable<Message_obj> incoming = _mailResiever.GetIncomingMails(uids);
-
-                foreach (Message_obj message in incoming)
+                i++;
+                try
                 {
-                    try
+                    //Создаем письмо для БД
+                    Mail m = new Mail
                     {
-                        //Создаем письмо для БД
-                        Mail m = new Mail
+                        MailAccount = _curentAccount,
+                        Uid = message.Uid,
+                        MailState = State.Incoming,
+                        Attachments = new List<Attachment>()
+                    };
+
+                    //Сохраняем в базе письмо
+                    _dBprovider.SaveObject(m);
+
+                    _curentAccount.Mails.ToList().Add(m);
+
+                    //Аттачи для БД
+                    if (message.Attachments != null)
+                    {
+                        foreach (var attach in message.Attachments)
                         {
-                            MailAccount = _curentAccount,
-                            Uid = message.Uid,
-                            MailState = State.Incoming,
-                            Attachments = new List<Attachment>()
-                        };
+                            //избавляюсь от нежелательных симаолов в имени атача
+                            attach.Name = attach.Name.Replace('/', '.');
+                            attach.Name = attach.Name.Replace('?', '1');
 
-                        //Сохраняем в базе письмо
-                        _dBprovider.SaveObject(m);
-
-                        _curentAccount.Mails.ToList().Add(m);
-
-                        //Аттачи для БД
-                        if (message.Attachments != null)
-                        {
-                            foreach (var attach in message.Attachments)
+                            Attachment att = new Attachment
                             {
-                                Attachment att = new Attachment
-                                {
-                                    FileName = attach.Name,
-                                    MailOwner = m
-                                };
+                                FileName = attach.Name,
+                                MailOwner = m
+                            };
 
-                                //Сохраням атач и прикрепляем к письму
-                                _dBprovider.SaveObject(att);
+                            //Сохраням атач и прикрепляем к письму
+                            _dBprovider.SaveObject(att);
 
-                                m.Attachments.ToList().Add(att);
-                            }
+                            m.Attachments.ToList().Add(att);
                         }
-
-                        //А еще на диск сохрани!
-                        _driveProvider.SaveMessage(
-                            Path.Combine(_curentAccount.LocalPath, Enum.GetName(typeof(State), State.Incoming)),
-                            message);
-
-                        //Добавляем содержимое письма к массиву в программе
-                        _incomingMessages.Add(message);
                     }
-                    catch (Exception ex)
+
+                    //А еще на диск сохрани!
+                    _driveProvider.SaveMessage(
+                        Path.Combine(_curentAccount.LocalPath, Enum.GetName(typeof(State), State.Incoming)),
+                        message);
+
+                    //Добавляем содержимое письма к массиву в программе
+                    lock (_curentAccount.MailAddress)
                     {
-                        //!!!
-                        throw ex;
+                        _localMessages.Add(message);
                     }
                 }
-            });
+                catch (Exception ex)
+                {
+                    //!!!
+                    throw ex;
+                }
+            }
         }
 
-        private async void _startListen()
+        private void _startListen()
         {
             do
             {
-                await _listenOnMails();
+                _listenOnMails();
 
                 Thread.Sleep(60000);
             } while (true);

@@ -150,6 +150,7 @@
     <Content Include="Views\Account\SignUp.cshtml" />
     <Content Include="Views\Home\Index.cshtml" />
     <Content Include="Views\Account\AddServerAccount.cshtml" />
+    <Content Include="Views\Home\GetMails.cshtml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
@@ -159,7 +160,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
-    <Folder Include="Views\ServerAccount\" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

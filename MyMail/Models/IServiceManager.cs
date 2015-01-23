@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using MyMail.Models.Entities;
+using NetWork.MailReciever;
 
 namespace MyMail.Models
 {
@@ -13,5 +14,6 @@ namespace MyMail.Models
         bool TrySetCurentAcount(string login);
         bool AddAccount(Account account, string login);
         bool AddUser(User user);
+        IEnumerable<Message_obj> GetMessages(State type);
     }
 }

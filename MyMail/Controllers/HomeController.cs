@@ -7,6 +7,7 @@ using System.Web.Security;
 using MyMail.Infrastructure;
 using MyMail.Models;
 using MyMail.Models.DBmanager;
+using MyMail.Models.Entities;
 
 namespace MyMail.Controllers
 {
@@ -14,11 +15,18 @@ namespace MyMail.Controllers
     public class HomeController : Controller
     {
         private IServiceManager _serviceManager;
+        private List<int> a = new List<int>();
+
+        public HomeController()
+        {
+            _serviceManager = (IServiceManager)System.Web.HttpContext.Current.Session["ServiceManager"];
+        }
 
         // GET: Home
         public ActionResult Index()
         {
-            _serviceManager = (IServiceManager) System.Web.HttpContext.Current.Session["ServiceManager"];
+//            a = new List<int>();
+//            _serviceManager = (IServiceManager) System.Web.HttpContext.Current.Session["ServiceManager"];
 
             //Если не логинился - залогинься
             if (_serviceManager == null && System.Web.HttpContext.Current.Session["Login"] == null)
@@ -31,6 +39,13 @@ namespace MyMail.Controllers
             ViewBag.Email = _serviceManager.GetCurentAccountEmail();
 
             return View();
+        }
+
+        public PartialViewResult GetMails(State mailsType)
+        {
+//            _serviceManager = (IServiceManager) System.Web.HttpContext.Current.Session["ServiceManager"];
+
+            return PartialView(_serviceManager.GetMessages(mailsType));
         }
     }
 }

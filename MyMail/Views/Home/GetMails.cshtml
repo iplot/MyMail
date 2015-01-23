@@ -1,0 +1,11 @@
+﻿@using NetWork.MailReciever
+@model IEnumerable<Message_obj>
+           
+@foreach (Message_obj message in Model)
+{
+    <tr>
+        <td>@message.From</td>
+        <td>@message.Subject</td> 
+        <td>@message.Date</td>
+    </tr>
+}

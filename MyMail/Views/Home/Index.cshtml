@@ -1,4 +1,4 @@
-﻿
+﻿@using MyMail.Models.Entities
 @{
     Layout = null;
 }
@@ -17,6 +17,18 @@
     <p><label>Account Email: </label> @ViewBag.Email</p>
 
     @Html.ActionLink("Add Account", "AddServerAccount", "Account")
+</div>
+
+<div>
+    <table>
+        <thead>
+        <tr><th>From</th> <th>Subject</th> <th>Date</th></tr>
+        </thead>
+
+        <tbody>
+        @Html.Action("GetMails", "Home", new{mailsType = State.Incoming})
+        </tbody>
+    </table>
 </div>
 </body>
 </html>

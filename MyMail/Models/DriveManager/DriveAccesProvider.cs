@@ -35,6 +35,7 @@ namespace MyMail.Models.DriveManager
             return path;
         }
 
+        //Пока без атачей
         public IEnumerable<Message_obj> getSavedMessages(string folderPath, IEnumerable<string> uids)
         {
 //            string realPath = Path.Combine(_folderPath, folderPath);
@@ -44,8 +45,15 @@ namespace MyMail.Models.DriveManager
 
             foreach (string uid in uids.ToArray())
             {
+                //Папачка письма
+                DirectoryInfo messageDirectory = new DirectoryInfo(
+                    Path.Combine(folderPath, uid)
+                    );
+
                 FileInfo file = null;
-                FileInfo[] files = dirInfo.GetFiles().Where(p => p.Name == uid).Select(p => p).ToArray();
+                FileInfo[] files = messageDirectory.GetFiles()
+                    .Where(p => p.Name == string.Format("{0}.xml", uid))
+                    .Select(p => p).ToArray();
 
                 //Если письмо в базе есть, а физически его нет, то пока просто пропустить его
                 //По хорошему надо как то обрабатывать

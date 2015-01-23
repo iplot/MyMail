@@ -10,6 +10,7 @@ using MyMail.Models.DriveManager;
 using MyMail.Models.Entities;
 using NetWork.MailReciever;
 using NetWork.MailSender;
+using NHibernate.Mapping;
 using Attachment = MyMail.Models.Entities.Attachment;
 
 namespace MyMail.Models
@@ -180,6 +181,7 @@ namespace MyMail.Models
             if (_curentAccount.Mails.ToArray().Length == 0)
                 return new List<Message_obj>();
 
+            //Убрать where !!! Обязательно!
             var uids = _curentAccount.Mails.Where(m => m.MailState == state).Select(m => m.Uid).ToArray();
 
             IEnumerable<Message_obj> mails = _driveProvider.getSavedMessages(
@@ -266,5 +268,19 @@ namespace MyMail.Models
                 Thread.Sleep(60000);
             } while (true);
         }
+
+        public IEnumerable<Message_obj> GetMessages(State type)
+        {
+            if (_curentAccount == null)
+                return new List<Message_obj>();
+
+            var uids = _curentAccount.Mails.Where(m => m.MailState == type).Select(m => m.Uid);
+
+            lock (_curentAccount.MailAddress)
+            {
+                var messages = _localMessages.Where(m => uids.Any(arg => arg == m.Uid)).Select(m => m).ToList();
+                return _localMessages;
+            }
+        } 
     }
 }

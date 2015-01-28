@@ -66,12 +66,17 @@ namespace MyMail.Models.CryptoManager
 
         //Получить зашифрованный синхронный ключ
         //После обновления синхронный ключ обновляется
+        //Тут ошибка! Предусмотреть получение публичного ключа получателя для RSA
         public string GetEncryptedSymmKey()
         {
             using (RSA Rsa = new RSACryptoServiceProvider())
             {
-                byte[] symmKey = Rsa.EncryptValue(Des.Key);
-                byte[] symmIV = Rsa.EncryptValue(Des.IV);
+                Rsa.ImportParameters(RsaKeys);
+
+//                byte[] symmKey = Rsa.EncryptValue(Des.Key);
+                byte[] symmKey = (Rsa as RSACryptoServiceProvider).Encrypt(Des.Key, false);
+//                byte[] symmIV = Rsa.EncryptValue(Des.IV);
+                byte[] symmIV = (Rsa as RSACryptoServiceProvider).Encrypt(Des.IV, false);
 
                 string encryptedKeys = Convert.ToBase64String(symmKey) + Convert.ToBase64String(symmIV);
                 Des = new DESCryptoServiceProvider();

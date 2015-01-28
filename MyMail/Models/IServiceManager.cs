@@ -15,7 +15,7 @@ namespace MyMail.Models
         bool AddAccount(Account account, string login);
         bool AddUser(User user);
         IEnumerable<Message_obj> GetMessages(State type);
-        void SendMessage(string text, string subject, string to);
-        void SendTestEncrypt(string text, string subject, params string[] to);
+        Mail SendMessage(string text, string subject, string to);
+        void SendEncryptedMessage(string text, string subject, string to);
     }
 }

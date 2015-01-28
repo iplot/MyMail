@@ -325,7 +325,7 @@ namespace MyMail.Models
         //Отправка
         //----------------------------------------------------------------------------------------------
         //Переделать для нескольких отправителей и добавить вложения
-        public void SendMessage(string text, string subject, string to)
+        public Mail SendMessage(string text, string subject, string to)
         {
             try
             {
@@ -334,42 +334,11 @@ namespace MyMail.Models
                 _mailSender.AddReceivers(to);
                 _mailSender.SendMessage();
 
-                //Задаем uid
-                byte[] uid = new byte[60];
-                new Random().NextBytes(uid);
-                string uidStr = Convert.ToBase64String(uid);
-                uidStr.Replace('/', '.');
-                uidStr.Replace('?', '1');
-                uidStr.Replace('+', '2');
+                //----------------------------------------------------
+                var nmail = _saveOutgoingMessage(text, subject, to);
+                //----------------------------------------------------
 
-                //Создание объекта программы
-                Message_obj nmess = new Message_obj
-                {
-                    Date = DateTime.Now.ToLongDateString(),
-                    From = _curentAccount.MailAddress,
-                    To = to,
-                    Text = text,
-                    Subject = subject,
-                    Uid = uidStr
-                };
-
-                //Добавить в список писем
-                _localMessages.Add(nmess);
-
-                //Сохранить на диск
-                _driveProvider.SaveMessage(
-                    Path.Combine(_curentAccount.LocalPath, Enum.GetName(typeof (State), State.Outgoing)),
-                    nmess);
-
-                //Записываем в БД
-                Mail nmail = new Mail
-                {
-                    MailAccount = _curentAccount,
-                    Uid = uidStr,
-                    MailState = State.Outgoing
-                };
-
-                _dBprovider.SaveObject(nmail);
+                return nmail;
             }
             catch (Exception ex)
             {
@@ -378,15 +347,79 @@ namespace MyMail.Models
             }
         }
 
-        //Отправка шифрованного сообщения
-        public void SendTestEncrypt(string text, string subject, params string[] to)
+        private Mail _saveOutgoingMessage(string text, string subject, string to)
         {
-//            string ntext = _cryptoProvider.EncrytpData(Encoding.ASCII.GetBytes(text));
-//            string nsubject = _cryptoProvider.EncrytpData(Encoding.ASCII.GetBytes(subject));
-//
-//            _mailSender.CreateMessage(ntext, false, nsubject);
-//            _mailSender.AddReceivers(to);
-//            _mailSender.SendMessage();
+            //Задаем uid
+            byte[] uid = new byte[60];
+            new Random().NextBytes(uid);
+            string uidStr = Convert.ToBase64String(uid);
+            uidStr = uidStr.Replace('/', '.');
+            uidStr = uidStr.Replace('?', '1');
+            uidStr = uidStr.Replace('+', '2');
+
+            //Создание объекта программы
+            Message_obj nmess = new Message_obj
+            {
+                Date = DateTime.Now.ToLongDateString(),
+                From = _curentAccount.MailAddress,
+                To = to,
+                Text = text,
+                Subject = subject,
+                Uid = uidStr
+            };
+
+            //Добавить в список писем
+            lock (_curentAccount.MailAddress)
+            {
+                _localMessages.Add(nmess);
+            }
+
+            //Сохранить на диск
+            _driveProvider.SaveMessage(
+                Path.Combine(_curentAccount.LocalPath, Enum.GetName(typeof (State), State.Outgoing)),
+                nmess);
+
+            //Записываем в БД
+            Mail nmail = new Mail
+            {
+                MailAccount = _curentAccount,
+                Uid = uidStr,
+                MailState = State.Outgoing
+            };
+
+            _dBprovider.SaveObject(nmail);
+            return nmail;
+        }
+
+        //Отправка шифрованного сообщения
+        public void SendEncryptedMessage(string text, string subject, string to)
+        {
+            string ntext = _cryptoProvider.EncrytpData(Encoding.ASCII.GetBytes(text));
+            string nsubject = _cryptoProvider.EncrytpData(Encoding.ASCII.GetBytes(subject));
+
+            string Key = Convert.ToBase64String(_cryptoProvider.Des.Key);
+            string IV = Convert.ToBase64String(_cryptoProvider.Des.IV);
+
+            string symmKeys = _cryptoProvider.GetEncryptedSymmKey();
+
+            symmKeys += ntext;
+
+            _mailSender.AddAditionalHeader("KeyLen", _cryptoProvider.Des.Key.Length.ToString());
+
+            var nmail = SendMessage(symmKeys, nsubject, to);
+
+            //Сохранение ключей
+            SymmKey nsymm = new SymmKey
+            {
+                CipherKey = Key,
+                IV = IV,
+                EncryptedMail = nmail
+            };
+
+            _dBprovider.SaveObject(nsymm);
+
+            nmail.Key.ToList().Add(nsymm);
+            
         }
     }
 }

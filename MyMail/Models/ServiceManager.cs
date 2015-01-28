@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
+using MyMail.Models.CryptoManager;
 using MyMail.Models.DBmanager;
 using MyMail.Models.DriveManager;
 using MyMail.Models.Entities;
@@ -21,6 +23,7 @@ namespace MyMail.Models
         private IDriveAccesProvider _driveProvider;
         private ISender _mailSender;
         private IResiever _mailResiever;
+        private ICryptoProvider _cryptoProvider;
 
         private Account _curentAccount;
         private List<Message_obj> _localMessages;
@@ -28,12 +31,13 @@ namespace MyMail.Models
         private Thread _backgroundListener;
 
         public ServiceManager(IDBprovider providerParam, IDriveAccesProvider driveProvider_param, 
-            ISender sender, IResiever resiever)
+            ISender sender, IResiever resiever, ICryptoProvider cryptoProvider_param)
         {
             _dBprovider = providerParam;
             _driveProvider = driveProvider_param;
             _mailSender = sender;
             _mailResiever = resiever;
+            _cryptoProvider = cryptoProvider_param;
 
             //По другому пока не знаю
             _backgroundListener = new Thread(new ThreadStart(_startListen));
@@ -88,9 +92,14 @@ namespace MyMail.Models
             }
         }
 
+        //!!!!!!!!!!!!!!!!!!!!!!!!!!
         public void ChangeAccount(string email)
         {
             _curentAccount = _dBprovider.GetAccount(email);
+
+            //Задаем ключи
+            _cryptoProvider.SetRsaKeys(_curentAccount.Key.ToList()[0].D, _curentAccount.Key.ToList()[0].E, 
+                _curentAccount.Key.ToList()[0].N);
         }
 
         public string GetCurentAccountEmail()
@@ -103,7 +112,8 @@ namespace MyMail.Models
             return _dBprovider.GetUsersAccounts(login).Select(x => x.MailAddress);
         }
 
-        //!!!!
+        //Выбрать первый акаунт из списка
+        //!!!!!!!!!!!!!!!!!!!!!
         public bool TrySetCurentAcount(string login)
         {
             var accounts = _dBprovider.GetUsersAccounts(login).ToArray();
@@ -116,6 +126,10 @@ namespace MyMail.Models
             else
             {
                 _curentAccount = accounts.First();
+
+                //Задаем ключи
+                _cryptoProvider.SetRsaKeys(_curentAccount.Key.ToList()[0].D, _curentAccount.Key.ToList()[0].E,
+                    _curentAccount.Key.ToList()[0].N);
 
                 _customiseServerWorkers();
 
@@ -149,11 +163,33 @@ namespace MyMail.Models
 
                 account.LocalPath = _driveProvider.addAccountFolder(account.MailAddress);
 
+                
                 _dBprovider.SaveObject(account);
 
+                //Записываем ключи акаунта
+                _cryptoProvider.NewRsaKeys();
+                AsymmKey key = new AsymmKey
+                {
+                    D = Convert.ToBase64String(_cryptoProvider.RsaKeys.D),
+                    E = Convert.ToBase64String(_cryptoProvider.RsaKeys.Exponent),
+                    N = Convert.ToBase64String(_cryptoProvider.RsaKeys.Modulus),
+                    AccountOwner = account
+                };
+
+                //Записываем ключ в базу
+                _dBprovider.SaveObject(key);
+
+                if (account.Key == null)
+                {
+                    account.Key = new List<AsymmKey>();
+                    account.Key.ToList().Add(key);
+                }
+
+                //Если акаунта не было, устанавливаем его
                 if (_curentAccount == null)
                 {
                     _curentAccount = account;
+                    _curentAccount.Mails = new List<Mail>();
 
                     _customiseServerWorkers();
 
@@ -194,7 +230,7 @@ namespace MyMail.Models
 
         private void _listenOnMails()
         {
-            var uids = _curentAccount.Mails.Where(m => m.MailState == State.Incoming).Select(m => m.Uid);
+            var uids = _curentAccount.Mails.Where(m => m.MailState == State.Incoming).Select(m => m.Uid).ToArray();
 
             IEnumerable<Message_obj> incoming = _mailResiever.GetIncomingMails(uids);
 
@@ -259,6 +295,7 @@ namespace MyMail.Models
             }
         }
 
+        //Включить слушатель писем
         private void _startListen()
         {
             do
@@ -269,6 +306,7 @@ namespace MyMail.Models
             } while (true);
         }
 
+        //Получить письма заданного типа
         public IEnumerable<Message_obj> GetMessages(State type)
         {
             if (_curentAccount == null)
@@ -279,8 +317,76 @@ namespace MyMail.Models
             lock (_curentAccount.MailAddress)
             {
                 var messages = _localMessages.Where(m => uids.Any(arg => arg == m.Uid)).Select(m => m).ToList();
-                return _localMessages;
+                return messages;
             }
-        } 
+        }
+ 
+        //----------------------------------------------------------------------------------------------
+        //Отправка
+        //----------------------------------------------------------------------------------------------
+        //Переделать для нескольких отправителей и добавить вложения
+        public void SendMessage(string text, string subject, string to)
+        {
+            try
+            {
+                //Отправить письмо
+                _mailSender.CreateMessage(text, false, subject);
+                _mailSender.AddReceivers(to);
+                _mailSender.SendMessage();
+
+                //Задаем uid
+                byte[] uid = new byte[60];
+                new Random().NextBytes(uid);
+                string uidStr = Convert.ToBase64String(uid);
+                uidStr.Replace('/', '.');
+                uidStr.Replace('?', '1');
+                uidStr.Replace('+', '2');
+
+                //Создание объекта программы
+                Message_obj nmess = new Message_obj
+                {
+                    Date = DateTime.Now.ToLongDateString(),
+                    From = _curentAccount.MailAddress,
+                    To = to,
+                    Text = text,
+                    Subject = subject,
+                    Uid = uidStr
+                };
+
+                //Добавить в список писем
+                _localMessages.Add(nmess);
+
+                //Сохранить на диск
+                _driveProvider.SaveMessage(
+                    Path.Combine(_curentAccount.LocalPath, Enum.GetName(typeof (State), State.Outgoing)),
+                    nmess);
+
+                //Записываем в БД
+                Mail nmail = new Mail
+                {
+                    MailAccount = _curentAccount,
+                    Uid = uidStr,
+                    MailState = State.Outgoing
+                };
+
+                _dBprovider.SaveObject(nmail);
+            }
+            catch (Exception ex)
+            {
+                //!!!!
+                throw ex;
+            }
+        }
+
+        //Отправка шифрованного сообщения
+        public void SendTestEncrypt(string text, string subject, params string[] to)
+        {
+//            string ntext = _cryptoProvider.EncrytpData(Encoding.ASCII.GetBytes(text));
+//            string nsubject = _cryptoProvider.EncrytpData(Encoding.ASCII.GetBytes(subject));
+//
+//            _mailSender.CreateMessage(ntext, false, nsubject);
+//            _mailSender.AddReceivers(to);
+//            _mailSender.SendMessage();
+        }
     }
 }

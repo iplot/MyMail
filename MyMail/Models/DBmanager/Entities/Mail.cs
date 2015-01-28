@@ -19,6 +19,9 @@ namespace MyMail.Models.Entities
 
         //Для записи
         public virtual Account MailAccount { get; set; }
+
+        //Он всего 1. Лучше пока не могу
+        public virtual IEnumerable<SymmKey> Key { get; set; }
     }
 
     public enum State

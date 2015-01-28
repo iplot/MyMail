@@ -12,5 +12,10 @@
       <one-to-many class="Attachment"/>
     </set>
     <many-to-one name="MailAccount" column="AccountId" class="Account"/>
+    <set name="Key" table="SymmKeys" cascade="all-delete-orphan" lazy="false">
+      <key column="MailId"/>
+      <one-to-many class="SymmKey"/>
+    </set>
+<!--    <one-to-one name="Key" class="SymmKey" lazy="false"/>-->
   </class>
 </hibernate-mapping>

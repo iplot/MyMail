@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<hibernate-mapping xmlns="urn:nhibernate-mapping-2.2" assembly="MyMail" namespace="MyMail.Models.Entities">
+  <class name="AsymmKey" table="AsymmKeys">
+    <id name="Id" column="Id">
+      <generator class="native"/>
+    </id>
+    <property name="D" column="D"/>
+    <property name="E" column="E"/>
+    <property name="N" column="N"/>
+    <many-to-one class="Account" name="AccountOwner" column="AccountId"/>
+  </class>
+</hibernate-mapping>

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Web;
 using System.Web.Mvc;
 using MyMail.Models;
+using MyMail.Models.CryptoManager;
 using MyMail.Models.DBmanager;
 using MyMail.Models.DriveManager;
 using NetWork.MailReciever;
@@ -46,6 +47,8 @@ namespace MyMail.Infrastructure
             _kernel.Bind<ISender>().To<MailSender>();
 
             _kernel.Bind<IResiever>().To<MailResiever>();
+
+            _kernel.Bind<ICryptoProvider>().To<CryptoProvider>();
         }
     }
 }

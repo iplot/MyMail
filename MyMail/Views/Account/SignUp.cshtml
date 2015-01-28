@@ -1,30 +1,24 @@
 ﻿@using MyMail.Models.Entities
 @model User
 @{
-    Layout = null;
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "SignUp";
 }
 
-<!DOCTYPE html>
+<div class="margDiv">
+    <h2 align="center">SignUp</h2>
+</div>
 
-<html>
-<head>
-    <meta name="viewport" content="width=device-width" />
-    <title>SignUp</title>
-</head>
-<body>
-<h2>SignUp</h2>
-
-<div>
-    @using (@Html.BeginForm())
+<div class="margDiv">
+    @using (@Html.BeginForm("SignUp", "Account", FormMethod.Post, new{@class="form-horizontal"}))
     {
         @Html.ValidationSummary()
         
-        <p><label>Login: </label> @Html.EditorFor(m => m.Login)</p>
-        <p><label>Password: </label> @Html.EditorFor(m => m.Password)</p>
-        
-        <input type="submit" value="Submit"/>
+        <p><label>Login: </label> @Html.EditorFor(m => m.Login,
+            new{htmlAttributes = new{@class = "form-control"}})</p>
+        <p><label>Password: </label> @Html.EditorFor(m => m.Password,
+            new{htmlAttributes = new {@class = "form-control"}})</p>
+
+        <p align="center"><input type="submit" value="Submit" class="btn btn-default" /></p>
     }
 </div>
-
-</body>
-</html>

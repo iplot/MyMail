@@ -25,11 +25,8 @@ namespace MyMail.Controllers
         // GET: Home
         public ActionResult Index()
         {
-//            a = new List<int>();
-//            _serviceManager = (IServiceManager) System.Web.HttpContext.Current.Session["ServiceManager"];
-
             //Если не логинился - залогинься
-            if (_serviceManager == null && System.Web.HttpContext.Current.Session["Login"] == null)
+            if (_serviceManager == null || System.Web.HttpContext.Current.Session["Login"] == null)
                 return RedirectToAction("Login", "Account");
 
             //Если аккаунт не выбран пробуем установить первый из списка
@@ -43,9 +40,22 @@ namespace MyMail.Controllers
 
         public PartialViewResult GetMails(State mailsType)
         {
-//            _serviceManager = (IServiceManager) System.Web.HttpContext.Current.Session["ServiceManager"];
-
             return PartialView(_serviceManager.GetMessages(mailsType));
+        }
+
+        public string Send(string text = "test text", string subject = "Subject", string to = "iplotnikov94@gmail.com")
+        {
+            _serviceManager.SendMessage(text, subject, to);
+
+            return "ready";
+        }
+
+        public string TestSend(string text = "test text", string subject = "Subject",
+            string to = "iplotnikov94@gmail.com")
+        {
+            _serviceManager.SendTestEncrypt(text, subject, to);
+
+            return "ready";
         }
     }
 }

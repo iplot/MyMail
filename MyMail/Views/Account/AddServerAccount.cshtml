@@ -1,34 +1,32 @@
 ﻿@using MyMail.Models.Entities
 @model Account
 @{
-    Layout = null;
+    Layout = "../Shared/_Layout.cshtml";
+    ViewBag.Title = "Add account";
 }
 
-<!DOCTYPE html>
+<div class="margDiv">
+    <h2 align="center">Add new ServerAccount</h2>
+</div>
 
-<html>
-<head>
-    <meta name="viewport" content="width=device-width" />
-    <title>AddServerAccount</title>
-</head>
-<body>
-<h2>Add new ServerAccount</h2>
-
-<div>
-    @using (@Html.BeginForm())
+<div class="margDiv">
+    @using (@Html.BeginForm("AddServerAccount", "Account", FormMethod.Post, new{@class = "form-horizontal"}))
     {
         @Html.ValidationSummary()
         
-        <p><label>SMTP Server Host: </label> @Html.EditorFor(m => m.SmtpServerHost)</p>
-        <p><label>SMTP Server Port: </label> @Html.EditorFor(m => m.SmtpServerPort)</p>
-        <p><label>POP3 Server Host: </label> @Html.EditorFor(m => m.Pop3ServerHost)</p>
-        <p><label>POP3 Server Port: </label> @Html.EditorFor(m => m.Pop3ServerPort)</p>
-        <p><label>Mail Address: </label> @Html.EditorFor(m => m.MailAddress)</p>
-        <p><label>Mail Password: </label> @Html.EditorFor(m => m.MailPassword)</p>
-        
-        <input type="submit" value="Submit"/>
+        <p><label>SMTP Server Host: </label> @Html.EditorFor(m => m.SmtpServerHost,
+            new{htmlAttributes = new{@class="form-control"}})</p>
+        <p><label>SMTP Server Port: </label> @Html.EditorFor(m => m.SmtpServerPort,
+            new{htmlAttributes = new{@class = "form-control"}})</p>
+        <p><label>POP3 Server Host: </label> @Html.EditorFor(m => m.Pop3ServerHost,
+            new{htmlAttributes = new{@class = "form-control"}})</p>
+        <p><label>POP3 Server Port: </label> @Html.EditorFor(m => m.Pop3ServerPort,
+            new{htmlAttributes = new{@class = "form-control"}})</p>
+        <p><label>Mail Address: </label> @Html.EditorFor(m => m.MailAddress,
+            new{htmlAttributes = new{@class = "form-control"}})</p>
+        <p><label>Mail Password: </label> @Html.EditorFor(m => m.MailPassword,
+            new{htmlAttributes = new{@class = "form-control"}})</p>
+
+        <p align="center"><input type="submit" value="Submit" class="btn btn-default" /></p>
     }
 </div>
-
-</body>
-</html>

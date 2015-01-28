@@ -107,6 +107,14 @@
     <EmbeddedResource Include="Attachment.hbm.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
+    <EmbeddedResource Include="AsymmKey.hbm.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <Content Include="Content\bootstrap-theme.css" />
+    <Content Include="Content\bootstrap-theme.min.css" />
+    <Content Include="Content\bootstrap.css" />
+    <Content Include="Content\bootstrap.min.css" />
+    <Content Include="fonts\glyphicons-halflings-regular.svg" />
     <Content Include="Global.asax" />
     <EmbeddedResource Include="hibernate.cfg.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -115,6 +123,22 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
     <EmbeddedResource Include="User.hbm.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <Content Include="fonts\glyphicons-halflings-regular.woff" />
+    <Content Include="fonts\glyphicons-halflings-regular.ttf" />
+    <Content Include="fonts\glyphicons-halflings-regular.eot" />
+    <Content Include="Content\bootstrap-theme.css.map" />
+    <Content Include="Content\bootstrap.css.map" />
+    <None Include="Scripts\jquery-2.1.3.intellisense.js" />
+    <Content Include="Scripts\bootstrap.js" />
+    <Content Include="Scripts\bootstrap.min.js" />
+    <Content Include="Scripts\jquery-2.1.3.js" />
+    <Content Include="Scripts\jquery-2.1.3.min.js" />
+    <Content Include="Scripts\jquery.unobtrusive-ajax.js" />
+    <Content Include="Scripts\jquery.unobtrusive-ajax.min.js" />
+    <Content Include="Scripts\npm.js" />
+    <EmbeddedResource Include="SymmKey.hbm.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
     <Content Include="Web.config" />
@@ -129,12 +153,16 @@
     </Compile>
     <Compile Include="Infrastructure\NinjectDependencyResolver.cs" />
     <Compile Include="Infrastructure\MymailAuthorizationAttribute.cs" />
+    <Compile Include="Models\CryptoManager\CryptoProvider.cs" />
+    <Compile Include="Models\CryptoManager\ICryptoProvider.cs" />
     <Compile Include="Models\DBmanager\DBprovider.cs" />
     <Compile Include="Models\DBmanager\Entities\Account.cs" />
+    <Compile Include="Models\DBmanager\Entities\AsymmKey.cs" />
     <Compile Include="Models\DBmanager\Entities\Attachment.cs" />
     <Compile Include="Models\DBmanager\Entities\Mail.cs" />
     <Compile Include="Models\DBmanager\Entities\Metadata\AccountMetaData.cs" />
     <Compile Include="Models\DBmanager\Entities\Metadata\UserMetaData.cs" />
+    <Compile Include="Models\DBmanager\Entities\SymmKey.cs" />
     <Compile Include="Models\DBmanager\Entities\User.cs" />
     <Compile Include="Models\DBmanager\IDBprovider.cs" />
     <Compile Include="Models\DriveManager\DriveAccesProvider.cs" />
@@ -151,6 +179,8 @@
     <Content Include="Views\Home\Index.cshtml" />
     <Content Include="Views\Account\AddServerAccount.cshtml" />
     <Content Include="Views\Home\GetMails.cshtml" />
+    <Content Include="Scripts\jquery-2.1.3.min.map" />
+    <Content Include="Views\Shared\_Layout.cshtml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>

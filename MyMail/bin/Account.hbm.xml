@@ -17,5 +17,9 @@
       <one-to-many class="Mail"/>
     </set>
     <many-to-one name="AccountUser" column="UserId" class="User"/>
+    <set name="Key" table="AsymmKeys" cascade="all-delete-orphan" lazy="false">
+      <key column="AccountId"/>
+      <one-to-many class="AsymmKey"/>
+    </set>
   </class>
 </hibernate-mapping>

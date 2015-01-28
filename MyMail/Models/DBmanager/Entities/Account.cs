@@ -28,6 +28,9 @@ namespace MyMail.Models.Entities
 
         public virtual IEnumerable<Mail> Mails { get; set; }
 
+        //Он всего 1. Лучше пока не могу
+        public virtual IEnumerable<AsymmKey> Key { get; set; } 
+
         //Надо для записи
         public virtual User AccountUser { get; set; }
     }

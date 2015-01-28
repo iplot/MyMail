@@ -6,6 +6,7 @@ using System.Web;
 using System.Xml.Serialization;
 using MyMail.Models.Entities;
 using NetWork.MailReciever;
+using Attachment = NetWork.MailReciever.Attachment;
 
 namespace MyMail.Models.DriveManager
 {
@@ -38,8 +39,6 @@ namespace MyMail.Models.DriveManager
         //Пока без атачей
         public IEnumerable<Message_obj> getSavedMessages(string folderPath, IEnumerable<string> uids)
         {
-//            string realPath = Path.Combine(_folderPath, folderPath);
-
             DirectoryInfo dirInfo = new DirectoryInfo(folderPath);
             List<Message_obj> messages = new List<Message_obj>();
 
@@ -64,20 +63,48 @@ namespace MyMail.Models.DriveManager
                     file = files.First();
                 }
 
-                StreamReader xmlReader = new StreamReader(file.FullName);
+                //Грузим из xml файла
+                var message = _loadXmlMessage(file.FullName);
 
-//                StringReader stringReader = new StringReader(xmlReader.ReadToEnd());
+                //Загрузка атачей
+                FileInfo[] allFiles = messageDirectory.GetFiles();
 
-                XmlSerializer serializer = new XmlSerializer(typeof(Message_obj));
+                //Если в папке толко письмо
+                if (allFiles.Length > 1)
+                    message.Attachments = new List<Attachment>();
 
-                Message_obj message = (Message_obj) serializer.Deserialize(xmlReader);
+                //Грузим каждый атач и добавляем к письму
+                foreach (FileInfo attach in allFiles)
+                {
+                    //Если это письмо - пропускаем
+                    if (attach.Name == string.Format("{0}.xml", message.Uid))
+                        continue;
 
-                //Добавить загрузку аттачей
+                    MemoryStream attachData = new MemoryStream(File.ReadAllBytes(attach.FullName));
+
+                    message.Attachments.Add(new Attachment
+                    {
+                        Data = attachData,
+                        Name = attach.Name
+                    });
+                }
 
                 messages.Add(message);
             }
 
             return messages;
+        }
+
+        private Message_obj _loadXmlMessage(string fileName)
+        {
+            StreamReader xmlReader = new StreamReader(fileName);
+
+            XmlSerializer serializer = new XmlSerializer(typeof (Message_obj));
+
+            Message_obj message = (Message_obj) serializer.Deserialize(xmlReader);
+            xmlReader.Close();
+
+            return message;
         }
 
         public void SaveMessage(string path, Message_obj message)
@@ -111,8 +138,13 @@ namespace MyMail.Models.DriveManager
                 }
             }
 
-            //Сериализуем письмо
-            XmlSerializer serializer = new XmlSerializer(typeof(Message_obj));
+            //Сериализуем и сохраняем письмо
+            _saveXmlMessage(path, message);
+        }
+
+        private void _saveXmlMessage(string path, Message_obj message)
+        {
+            XmlSerializer serializer = new XmlSerializer(typeof (Message_obj));
             StringWriter stringWriter = new StringWriter();
 
             serializer.Serialize(stringWriter, message);

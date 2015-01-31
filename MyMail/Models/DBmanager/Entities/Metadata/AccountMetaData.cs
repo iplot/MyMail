@@ -21,6 +21,7 @@ namespace MyMail.Models.Entities
         public virtual int Pop3ServerPort { get; set; }
 
         [Required]
+        [UIHint("EmailAddress")]
         public virtual string MailAddress { get; set; }
 
         [Required]

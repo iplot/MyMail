@@ -1,0 +1,40 @@
+﻿
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>@ViewBag.Title</title>
+
+    <link href="~/Content/bootstrap.css" rel="stylesheet" />
+    <link href="~/Content/bootstrap-theme.css" rel="stylesheet" />
+    <style>
+        div.margDiv {
+            margin-top: 50px;
+        }
+
+        input {
+            margin-bottom: 10px;
+        }
+
+        .field-validation-error {
+            color: red;
+        }
+
+        .validation-summary-errors {
+            color: red;
+            font-weight: bold;
+        }
+
+        .input-validation-error {
+            border: 2px solid red;
+            background-color: plum;
+        }
+    </style>
+
+    @RenderSection("Scripts", false)
+</head>
+<body>
+    @RenderBody()
+</body>
+</html>

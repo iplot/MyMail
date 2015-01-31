@@ -10,5 +10,6 @@ namespace MyMail.Models.DBmanager
         Account GetAccount(string email);
         void SaveObject(Object obj);
         IEnumerable<Account> GetUsersAccounts(string login);
+        AsymmKey GetAsymmKey(string email);
     }
 }

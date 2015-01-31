@@ -5,28 +5,39 @@
     ViewBag.Title = "Add account";
 }
 
-<div class="margDiv">
-    <h2 align="center">Add new ServerAccount</h2>
-</div>
+<div class="container margDiv">
 
-<div class="margDiv">
-    @using (@Html.BeginForm("AddServerAccount", "Account", FormMethod.Post, new{@class = "form-horizontal"}))
+    <h2 class="form-signin-heading">Add new ServerAccount</h2>
+
+    @using (@Html.BeginForm("AddServerAccount", "Account", FormMethod.Post, new {@class = "form-horizontal"}))
     {
         @Html.ValidationSummary()
-        
-        <p><label>SMTP Server Host: </label> @Html.EditorFor(m => m.SmtpServerHost,
-            new{htmlAttributes = new{@class="form-control"}})</p>
-        <p><label>SMTP Server Port: </label> @Html.EditorFor(m => m.SmtpServerPort,
-            new{htmlAttributes = new{@class = "form-control"}})</p>
-        <p><label>POP3 Server Host: </label> @Html.EditorFor(m => m.Pop3ServerHost,
-            new{htmlAttributes = new{@class = "form-control"}})</p>
-        <p><label>POP3 Server Port: </label> @Html.EditorFor(m => m.Pop3ServerPort,
-            new{htmlAttributes = new{@class = "form-control"}})</p>
-        <p><label>Mail Address: </label> @Html.EditorFor(m => m.MailAddress,
-            new{htmlAttributes = new{@class = "form-control"}})</p>
-        <p><label>Mail Password: </label> @Html.EditorFor(m => m.MailPassword,
-            new{htmlAttributes = new{@class = "form-control"}})</p>
 
-        <p align="center"><input type="submit" value="Submit" class="btn btn-default" /></p>
+        <label for="SmtpServerHost" class="sr-only">Smtp host</label>
+         @Html.EditorFor(m => m.SmtpServerHost, 
+            new {htmlAttributes = new {@class = "form-control", required="", placeholder="Smtp host", autofocus=""}})
+
+        <label for="SmtpServerPort" class="sr-only">Smtp port</label>
+         @Html.EditorFor(m => m.SmtpServerPort,
+            new {htmlAttributes = new {@class = "form-control", required="", placeholder="Smtp port"}})
+
+        <label for="Pop3ServerHost" class="sr-only">Pop3 host</label>
+         @Html.EditorFor(m => m.Pop3ServerHost,
+            new {htmlAttributes = new {@class = "form-control", required="", placeholder="Pop3 host"}})
+
+        <label for="Pop3ServerPort" class="sr-only">Pop3 port</label>
+         @Html.EditorFor(m => m.Pop3ServerPort,
+            new {htmlAttributes = new {@class = "form-control", required="", placeholder="Pop3 port"}})
+
+        <label for="MailAddress" class="sr-only">E-mail</label>
+         @Html.EditorFor(m => m.MailAddress,
+            new {htmlAttributes = new {@class = "form-control", required="", placeholder="Email"}})
+
+        <label for="MailPassword" class="sr-only">Password</label>
+         @Html.EditorFor(m => m.MailPassword,
+            new {htmlAttributes = new {@class = "form-control", required="", placeholder="Password"}})
+
+        <p align="center"><input type="submit" value="Submit" class="btn btn-default"/>
+        </p>
     }
 </div>

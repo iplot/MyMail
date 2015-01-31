@@ -5,20 +5,21 @@
     ViewBag.Title = "SignUp";
 }
 
-<div class="margDiv">
-    <h2 align="center">SignUp</h2>
-</div>
+<div class="container margDiv">
 
-<div class="margDiv">
-    @using (@Html.BeginForm("SignUp", "Account", FormMethod.Post, new{@class="form-horizontal"}))
+    <h2 class="form-signin-heading">Please sign up</h2>
+
+    @using (@Html.BeginForm("SignUp", "Account", FormMethod.Post, new {@class = "form-signin"}))
     {
         @Html.ValidationSummary()
-        
-        <p><label>Login: </label> @Html.EditorFor(m => m.Login,
-            new{htmlAttributes = new{@class = "form-control"}})</p>
-        <p><label>Password: </label> @Html.EditorFor(m => m.Password,
-            new{htmlAttributes = new {@class = "form-control"}})</p>
 
-        <p align="center"><input type="submit" value="Submit" class="btn btn-default" /></p>
+        <label for="Login" class="sr-only">Signup</label>
+        @Html.TextBoxFor(m => m.Login, new { @class = "form-control", required = "", autofocus = "", placeholder = "Login" })
+
+        <label for="Password" class="sr-only">Password</label>
+        @Html.PasswordFor(m => m.Password, new { @class = "form-control", required = "", placeholder = "Password"})
+
+        <button class="btn btn-lg btn-primary btn-block" style="margin-top: 10px;" type="submit">Log in</button>
     }
+
 </div>

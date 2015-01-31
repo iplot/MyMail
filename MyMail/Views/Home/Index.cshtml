@@ -1,6 +1,6 @@
 ﻿@using MyMail.Models.Entities
 @{
-    Layout = "../Shared/_Layout.cshtml";
+    Layout = "../Shared/_EmptyLayout.cshtml";
     ViewBag.Title = "MyMail";
     AjaxOptions opts = new AjaxOptions
     {
@@ -8,56 +8,43 @@
     };
 }
 
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-lg-3">
-
-            <!--Отображаем какой юзарь в системе-->
-            <div style="border-style: outset; border-color: gray">
-                <p><label>User: </label> @Session["Login"]</p>
-                <p><label>Account Email: </label> @ViewBag.Email</p>
-
-                @Html.ActionLink("Add Account", "AddServerAccount", "Account")
-            </div>
-
-            <!--Функциональные кнопки-->
-            <div class="row" style="margin-top: 10%">
-                <div class="col-lg-3">
-
-                    <!--Send кнопка-->
-                    <button class="btn btn-default" onclick=" sendClick() ">Send</button>
-
-                    <!--Окошко для письма-->
-                    <div id="sendWindow">
-                        <div id="closeSendWindow" onclick=" sendClick() ">X</div>
-                        <!--Форма для отправки письма-->
-                        @using (Html.BeginForm("Index", "Home", FormMethod.Post, new{@class="form-horizontal"}))
-                        {
-                            <p><label>To</label> @Html.TextBox("reciever", null, new{@class="form-control"})</p>
-                            <p><label>Subject</label> @Html.TextBox("subject", null, new{@class="form-control"})</p>
-                            <p><label>Text</label> @Html.TextArea("text", new {@class = "form-control"})</p>
-                            
-                            <input type="submit" value="Send" class="btn btn-default"/>
-                        }
-                    </div>
-
-                    <!--Пункты выбора типа письма-->
-                    <div>
-                        <ul class="list-unstyled">
-                            <li>@Ajax.ActionLink("Incomig", "GetMails", new {mailsType = State.Incoming}, opts)</li>
-                            <li>@Ajax.ActionLink("Outgoing", "GetMails", new {mailsType = State.Outgoing}, opts)</li>
-                        </ul>
-                    </div>
-
-                </div>
-            </div>
-
+<nav class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="~/Home/Index">MyMail</a>
         </div>
-        <!--Таблица писем-->
-        <div class="col-lg-9">
+        <div id="navbar" class="collapse navbar-collapse">
+            <ul class="nav navbar-nav">
+                <li><a>User: @Session["Login"]</a></li>
+                <li><a>@ViewBag.Email</a></li>
+            </ul>
+        </div><!--/.nav-collapse -->
+    </div>
+</nav>
 
+<div class="container margDiv">
+    <div class="row">
+
+        <!--Функциональные кнопки-->
+        <div class="col-xs-6 col-sm-3 col-lg-4 sidebar-offcanvas" id="sidebar">
+            <div class="list-group">
+                @Ajax.ActionLink("Incoming", "GetMails", new{mailsType=State.Incoming}, opts,
+                             new { @class = "list-group-item active", onclick = "menuItemSelected()" })
+                @Ajax.ActionLink("Outgoing", "GetMails", new{mailsType=State.Outgoing}, opts,
+                             new { @class = "list-group-item", onclick = "menuItemSelected()" })
+            </div>
+        </div>
+
+        <!--Таблица писем-->
+        <div class="col-lg-8">
             <div>
-                <table class="table table-hover">
+                <table class="table table-hover table-striped">
                     <thead>
                         <tr><th>From</th> <th>Subject</th> <th>Date</th></tr>
                     </thead>
@@ -68,7 +55,7 @@
             </div>
 
         </div>
-    </div>
+    </div>  
 </div>
 
 
@@ -77,8 +64,9 @@
     <script src="~/Scripts/jquery.unobtrusive-ajax.js"></script>
 
     <script type="text/javascript">
-        function sendClick() {
-            $('#sendWindow').fadeToggle();
+        function menuItemSelected() {
+            $("a.active").toggleClass("active");
+            $(this).toggleClass("active");
         }
     </script>
 }

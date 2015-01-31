@@ -5,6 +5,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Web;
+using MyMail.Models.Entities;
 using NHibernate.Classic;
 
 namespace MyMail.Models.CryptoManager
@@ -79,11 +80,23 @@ namespace MyMail.Models.CryptoManager
         //Получить зашифрованный синхронный ключ
         //После обновления синхронный ключ обновляется
         //Тут ошибка! Предусмотреть получение публичного ключа получателя для RSA
-        public string GetEncryptedSymmKey()
+        public string GetEncryptedSymmKey(AsymmKey reciever_key)
         {
             using (RSA Rsa = new RSACryptoServiceProvider())
             {
-                Rsa.ImportParameters(RsaKeys);
+                RSAParameters rec_key = new RSAParameters
+                {
+                    D = Convert.FromBase64String(reciever_key.D),
+                    DP = Convert.FromBase64String(reciever_key.DP),
+                    DQ = Convert.FromBase64String(reciever_key.DQ),
+                    Exponent = Convert.FromBase64String(reciever_key.E),
+                    InverseQ = Convert.FromBase64String(reciever_key.InverseQ),
+                    Modulus = Convert.FromBase64String(reciever_key.N),
+                    P = Convert.FromBase64String(reciever_key.P),
+                    Q = Convert.FromBase64String(reciever_key.Q)
+                };
+
+                Rsa.ImportParameters(rec_key);
 
                 byte[] symmKey = (Rsa as RSACryptoServiceProvider).Encrypt(Des.Key, false);
                 byte[] symmIV = (Rsa as RSACryptoServiceProvider).Encrypt(Des.IV, false);

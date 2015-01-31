@@ -140,6 +140,7 @@ namespace MyMail.Models
 
                 //Cтоит подумать о асинхронности
                 _localMessages = _getSavedMessages(State.Incoming).ToList();
+                _localMessages.AddRange(_getSavedMessages(State.Outgoing).ToList());
 
                 //Если слушатель не работает - включить
                 if(!_backgroundListener.IsAlive)
@@ -231,7 +232,7 @@ namespace MyMail.Models
             var uids = _curentAccount.Mails.Where(m => m.MailState == state).Select(m => m.Uid).ToArray();
 
             IEnumerable<Message_obj> mails = _driveProvider.getSavedMessages(
-                Path.Combine(_curentAccount.LocalPath, Enum.GetName(typeof (State), State.Incoming)),
+                Path.Combine(_curentAccount.LocalPath, Enum.GetName(typeof (State), state)),
                 uids
                 );
 
@@ -241,30 +242,36 @@ namespace MyMail.Models
         //!!!!
         private void _listenOnMails()
         {
-            var uids = _curentAccount.Mails.Where(m => m.MailState == State.Incoming).Select(m => m.Uid).ToArray();
+            var uids = _curentAccount.Mails.Select(m => m.Uid).ToArray();
 
 //            IEnumerable<Message_obj> incoming = _mailResiever.GetIncomingMails(uids);
-            
-            foreach (Message_obj message in _mailResiever.GetIncomingMails(uids))
+            try
             {
-                if (message.KeyLength > 0)
+                foreach (Message_obj message in _mailResiever.GetIncomingMails(uids))
                 {
-                    string symm_key = message.Text.Substring(0, message.KeyLength / 2);
-                    string symm_iv = message.Text.Substring(message.KeyLength / 2, message.KeyLength / 2);
-                    message.Text = message.Text.Remove(0, message.KeyLength);
+                    if (message.KeyLength > 0)
+                    {
+                        string symm_key = message.Text.Substring(0, message.KeyLength/2);
+                        string symm_iv = message.Text.Substring(message.KeyLength/2, message.KeyLength/2);
+                        message.Text = message.Text.Remove(0, message.KeyLength);
 
-                    message.Subject = _cryptoProvider.DecryptData(
-                        Convert.FromBase64String(message.Subject),
-                        Convert.FromBase64String(symm_key),
-                        Convert.FromBase64String(symm_iv));
+                        message.Subject = _cryptoProvider.DecryptData(
+                            Convert.FromBase64String(message.Subject),
+                            Convert.FromBase64String(symm_key),
+                            Convert.FromBase64String(symm_iv));
 
-                    message.Text = _cryptoProvider.DecryptData(
-                        Convert.FromBase64String(message.Text),
-                        Convert.FromBase64String(symm_key),
-                        Convert.FromBase64String(symm_iv));
+                        message.Text = _cryptoProvider.DecryptData(
+                            Convert.FromBase64String(message.Text),
+                            Convert.FromBase64String(symm_key),
+                            Convert.FromBase64String(symm_iv));
+                    }
+
+                    _saveIncomingMessage(message);
                 }
-
-                _saveIncomingMessage(message);
+            }
+            catch (Exception ex)
+            {
+                //Надо доделать обработку, но если нет соединения с pop, то пропускаем мимо ушей
             }
         }
 
@@ -448,7 +455,14 @@ namespace MyMail.Models
             string Key = Convert.ToBase64String(_cryptoProvider.Des.Key);
             string IV = Convert.ToBase64String(_cryptoProvider.Des.IV);
 
-            string symmKeys = _cryptoProvider.GetEncryptedSymmKey();
+
+            AsymmKey key = _dBprovider.GetAsymmKey(to);
+
+            //Сюда передать открытый ключ получаетля!!!!!
+            string symmKeys = _cryptoProvider.GetEncryptedSymmKey(key);
+
+
+
 
             _mailSender.AddAditionalHeader("KeyLen", symmKeys.Length.ToString());
 

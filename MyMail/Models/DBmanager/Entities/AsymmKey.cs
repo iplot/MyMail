@@ -15,6 +15,16 @@ namespace MyMail.Models.Entities
 
         public virtual string N { get; set; }
 
+        public virtual string DP { get; set; }
+
+        public virtual string DQ { get; set; }
+
+        public virtual string InverseQ { get; set; }
+
+        public virtual string P { get; set; }
+
+        public virtual string Q { get; set; }
+
         public virtual Account AccountOwner { get; set; }
     }
 }

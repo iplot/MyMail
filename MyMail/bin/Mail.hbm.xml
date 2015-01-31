@@ -16,6 +16,5 @@
       <key column="MailId"/>
       <one-to-many class="SymmKey"/>
     </set>
-<!--    <one-to-one name="Key" class="SymmKey" lazy="false"/>-->
   </class>
 </hibernate-mapping>

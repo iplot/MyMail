@@ -51,7 +51,7 @@ namespace MyMail.Controllers
         }
 
         public string TestSend(string text = "test text", string subject = "Subject",
-            string to = "ilya.plotnikov.94@mail.ru")
+            string to = "iplotnikov94@gmail.com")
         {
             _serviceManager.SendEncryptedMessage(text, subject, to);
 

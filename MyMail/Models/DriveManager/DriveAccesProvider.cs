@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Web;
 using System.Xml.Serialization;
+using MyMail.Infrastructure;
 using MyMail.Models.Entities;
 using NetWork.MailReciever;
 using Attachment = NetWork.MailReciever.Attachment;
@@ -36,7 +37,6 @@ namespace MyMail.Models.DriveManager
             return path;
         }
 
-        //Пока без атачей
         public IEnumerable<Message_obj> getSavedMessages(string folderPath, IEnumerable<string> uids)
         {
             DirectoryInfo dirInfo = new DirectoryInfo(folderPath);
@@ -119,6 +119,8 @@ namespace MyMail.Models.DriveManager
                 //Записываем все атачи, если они есть
                 foreach (NetWork.MailReciever.Attachment attach in message.Attachments)
                 {
+                    attach.Name = attach.Name.CleanString();
+
                     FileInfo fileName = new FileInfo(Path.Combine(path, attach.Name));
 
                     FileStream writer = new FileStream(fileName.FullName, FileMode.Create);

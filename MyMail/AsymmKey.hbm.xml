@@ -7,6 +7,11 @@
     <property name="D" column="D"/>
     <property name="E" column="E"/>
     <property name="N" column="N"/>
+    <property name="DP" column="DP"/>
+    <property name="DQ" column="DQ"/>
+    <property name="InverseQ" column="InverseQ"/>
+    <property name="P" column="P"/>
+    <property name="Q" column="Q"/>
     <many-to-one class="Account" name="AccountOwner" column="AccountId"/>
   </class>
 </hibernate-mapping>

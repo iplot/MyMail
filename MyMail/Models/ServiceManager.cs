@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
+using MyMail.Infrastructure;
 using MyMail.Models.CryptoManager;
 using MyMail.Models.DBmanager;
 using MyMail.Models.DriveManager;
@@ -98,8 +99,10 @@ namespace MyMail.Models
             _curentAccount = _dBprovider.GetAccount(email);
 
             //Задаем ключи
-            _cryptoProvider.SetRsaKeys(_curentAccount.Key.ToList()[0].D, _curentAccount.Key.ToList()[0].E, 
-                _curentAccount.Key.ToList()[0].N);
+            _cryptoProvider.SetRsaKeys(_curentAccount.Key.ToList()[0].D, _curentAccount.Key.ToList()[0].E,
+                    _curentAccount.Key.ToList()[0].N, _curentAccount.Key.ToList()[0].DP,
+                    _curentAccount.Key.ToList()[0].DQ, _curentAccount.Key.ToList()[0].InverseQ,
+                    _curentAccount.Key.ToList()[0].P, _curentAccount.Key.ToList()[0].Q);
         }
 
         public string GetCurentAccountEmail()
@@ -129,7 +132,9 @@ namespace MyMail.Models
 
                 //Задаем ключи
                 _cryptoProvider.SetRsaKeys(_curentAccount.Key.ToList()[0].D, _curentAccount.Key.ToList()[0].E,
-                    _curentAccount.Key.ToList()[0].N);
+                    _curentAccount.Key.ToList()[0].N, _curentAccount.Key.ToList()[0].DP,
+                    _curentAccount.Key.ToList()[0].DQ, _curentAccount.Key.ToList()[0].InverseQ,
+                    _curentAccount.Key.ToList()[0].P, _curentAccount.Key.ToList()[0].Q);
 
                 _customiseServerWorkers();
 
@@ -173,6 +178,11 @@ namespace MyMail.Models
                     D = Convert.ToBase64String(_cryptoProvider.RsaKeys.D),
                     E = Convert.ToBase64String(_cryptoProvider.RsaKeys.Exponent),
                     N = Convert.ToBase64String(_cryptoProvider.RsaKeys.Modulus),
+                    DP = Convert.ToBase64String(_cryptoProvider.RsaKeys.DP),
+                    DQ = Convert.ToBase64String(_cryptoProvider.RsaKeys.DQ),
+                    InverseQ = Convert.ToBase64String(_cryptoProvider.RsaKeys.InverseQ),
+                    P = Convert.ToBase64String(_cryptoProvider.RsaKeys.P),
+                    Q = Convert.ToBase64String(_cryptoProvider.RsaKeys.Q),
                     AccountOwner = account
                 };
 
@@ -181,8 +191,8 @@ namespace MyMail.Models
 
                 if (account.Key == null)
                 {
-                    account.Key = new List<AsymmKey>();
-                    account.Key.ToList().Add(key);
+                    account.Key = new List<AsymmKey>{key};
+//                    account.Key.ToList().Add(key);
                 }
 
                 //Если акаунта не было, устанавливаем его
@@ -228,70 +238,94 @@ namespace MyMail.Models
             return mails;
         }
 
+        //!!!!
         private void _listenOnMails()
         {
             var uids = _curentAccount.Mails.Where(m => m.MailState == State.Incoming).Select(m => m.Uid).ToArray();
 
-            IEnumerable<Message_obj> incoming = _mailResiever.GetIncomingMails(uids);
-
-            int i = 0;
-            foreach (Message_obj message in incoming)
+//            IEnumerable<Message_obj> incoming = _mailResiever.GetIncomingMails(uids);
+            
+            foreach (Message_obj message in _mailResiever.GetIncomingMails(uids))
             {
-                i++;
-                try
+                if (message.KeyLength > 0)
                 {
-                    //Создаем письмо для БД
-                    Mail m = new Mail
+                    string symm_key = message.Text.Substring(0, message.KeyLength / 2);
+                    string symm_iv = message.Text.Substring(message.KeyLength / 2, message.KeyLength / 2);
+                    message.Text = message.Text.Remove(0, message.KeyLength);
+
+                    message.Subject = _cryptoProvider.DecryptData(
+                        Convert.FromBase64String(message.Subject),
+                        Convert.FromBase64String(symm_key),
+                        Convert.FromBase64String(symm_iv));
+
+                    message.Text = _cryptoProvider.DecryptData(
+                        Convert.FromBase64String(message.Text),
+                        Convert.FromBase64String(symm_key),
+                        Convert.FromBase64String(symm_iv));
+                }
+
+                _saveIncomingMessage(message);
+            }
+        }
+
+        private void _saveIncomingMessage(Message_obj message)
+        {
+            try
+            {
+                //Если Uid null, то задаем вручную. Чистим от ненужных знаков
+                message.Uid = message.Uid ?? _createUid();
+                message.Uid = message.Uid.CleanString();
+
+                //А еще на диск сохрани!
+                _driveProvider.SaveMessage(
+                    Path.Combine(_curentAccount.LocalPath, Enum.GetName(typeof(State), State.Incoming)),
+                    message);
+
+
+                //Создаем письмо для БД
+                Mail m = new Mail
+                {
+                    MailAccount = _curentAccount,
+                    Uid = message.Uid,
+                    MailState = State.Incoming,
+                    Attachments = new List<Attachment>()
+                };
+
+                //Сохраняем в базе письмо
+                _dBprovider.SaveObject(m);
+
+                List<Mail> temp = _curentAccount.Mails.ToList();
+                temp.Add(m);
+                _curentAccount.Mails = temp;
+
+                //Аттачи для БД
+                if (message.Attachments != null)
+                {
+                    foreach (var attach in message.Attachments)
                     {
-                        MailAccount = _curentAccount,
-                        Uid = message.Uid,
-                        MailState = State.Incoming,
-                        Attachments = new List<Attachment>()
-                    };
-
-                    //Сохраняем в базе письмо
-                    _dBprovider.SaveObject(m);
-
-                    _curentAccount.Mails.ToList().Add(m);
-
-                    //Аттачи для БД
-                    if (message.Attachments != null)
-                    {
-                        foreach (var attach in message.Attachments)
+                        Attachment att = new Attachment
                         {
-                            //избавляюсь от нежелательных симаолов в имени атача
-                            attach.Name = attach.Name.Replace('/', '.');
-                            attach.Name = attach.Name.Replace('?', '1');
+                            FileName = attach.Name,
+                            MailOwner = m
+                        };
 
-                            Attachment att = new Attachment
-                            {
-                                FileName = attach.Name,
-                                MailOwner = m
-                            };
+                        //Сохраням атач и прикрепляем к письму
+                        _dBprovider.SaveObject(att);
 
-                            //Сохраням атач и прикрепляем к письму
-                            _dBprovider.SaveObject(att);
-
-                            m.Attachments.ToList().Add(att);
-                        }
-                    }
-
-                    //А еще на диск сохрани!
-                    _driveProvider.SaveMessage(
-                        Path.Combine(_curentAccount.LocalPath, Enum.GetName(typeof(State), State.Incoming)),
-                        message);
-
-                    //Добавляем содержимое письма к массиву в программе
-                    lock (_curentAccount.MailAddress)
-                    {
-                        _localMessages.Add(message);
+                        m.Attachments.ToList().Add(att);
                     }
                 }
-                catch (Exception ex)
+
+                //Добавляем содержимое письма к массиву в программе
+                lock (_curentAccount.MailAddress)
                 {
-                    //!!!
-                    throw ex;
+                    _localMessages.Add(message);
                 }
+            }
+            catch (Exception ex)
+            {
+                //!!!
+                throw ex;
             }
         }
 
@@ -334,9 +368,7 @@ namespace MyMail.Models
                 _mailSender.AddReceivers(to);
                 _mailSender.SendMessage();
 
-                //----------------------------------------------------
                 var nmail = _saveOutgoingMessage(text, subject, to);
-                //----------------------------------------------------
 
                 return nmail;
             }
@@ -350,12 +382,7 @@ namespace MyMail.Models
         private Mail _saveOutgoingMessage(string text, string subject, string to)
         {
             //Задаем uid
-            byte[] uid = new byte[60];
-            new Random().NextBytes(uid);
-            string uidStr = Convert.ToBase64String(uid);
-            uidStr = uidStr.Replace('/', '.');
-            uidStr = uidStr.Replace('?', '1');
-            uidStr = uidStr.Replace('+', '2');
+            var uidStr = _createUid();
 
             //Создание объекта программы
             Message_obj nmess = new Message_obj
@@ -384,11 +411,30 @@ namespace MyMail.Models
             {
                 MailAccount = _curentAccount,
                 Uid = uidStr,
-                MailState = State.Outgoing
+                MailState = State.Outgoing,
+                Key = new List<SymmKey>()
             };
 
             _dBprovider.SaveObject(nmail);
+
+            lock (_curentAccount.MailAddress)
+            {
+                List<Mail> temp = _curentAccount.Mails.ToList();
+                temp.Add(nmail);
+                _curentAccount.Mails = temp;
+            }
+
             return nmail;
+        }
+
+        private string _createUid()
+        {
+            byte[] uid = new byte[60];
+            new Random().NextBytes(uid);
+            string uidStr = Convert.ToBase64String(uid);
+
+            uidStr = uidStr.CleanString();
+            return uidStr;
         }
 
         //Отправка шифрованного сообщения
@@ -396,15 +442,17 @@ namespace MyMail.Models
         {
             string ntext = _cryptoProvider.EncrytpData(Encoding.ASCII.GetBytes(text));
             string nsubject = _cryptoProvider.EncrytpData(Encoding.ASCII.GetBytes(subject));
+//            string ntext = _cryptoProvider.EncrytpData(Convert.FromBase64String(text));
+//            string nsubject = _cryptoProvider.EncrytpData(Convert.FromBase64String(subject));
 
             string Key = Convert.ToBase64String(_cryptoProvider.Des.Key);
             string IV = Convert.ToBase64String(_cryptoProvider.Des.IV);
 
             string symmKeys = _cryptoProvider.GetEncryptedSymmKey();
 
-            symmKeys += ntext;
+            _mailSender.AddAditionalHeader("KeyLen", symmKeys.Length.ToString());
 
-            _mailSender.AddAditionalHeader("KeyLen", _cryptoProvider.Des.Key.Length.ToString());
+            symmKeys += ntext;
 
             var nmail = SendMessage(symmKeys, nsubject, to);
 

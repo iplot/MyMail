@@ -1,11 +1,20 @@
 ﻿@using NetWork.MailReciever
 @model IEnumerable<Message_obj>
-           
-@foreach (Message_obj message in Model)
-{
-    <tr>
-        <td>@message.From</td>
-        <td>@message.Subject</td> 
-        <td>@message.Date</td>
-    </tr>
-}
+
+<table class="table table-hover table-striped">
+    <thead>
+    <tr><th>@(ViewBag.State == "Incoming" ? "From" : "To")</th> <th>Subject</th> <th>Date</th></tr>
+    </thead>
+    <tbody>
+        @foreach (Message_obj message in Model)
+        {
+            <tr style="cursor: pointer">
+                <td>@message.From</td>
+                <td>@message.Subject</td>
+                <td>@message.Date</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+

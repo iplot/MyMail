@@ -8,6 +8,7 @@ using MyMail.Infrastructure;
 using MyMail.Models;
 using MyMail.Models.DBmanager;
 using MyMail.Models.Entities;
+using NetWork.MailReciever;
 
 namespace MyMail.Controllers
 {
@@ -40,14 +41,21 @@ namespace MyMail.Controllers
 
         public PartialViewResult GetMails(State mailsType)
         {
+            ViewBag.State = Enum.GetName(typeof (State), mailsType);
+
             return PartialView(_serviceManager.GetMessages(mailsType));
         }
 
-        public string Send(string text = "test text", string subject = "Subject", string to = "iplotnikov94@gmail.com")
+        public PartialViewResult PrepareSend()
+        {
+            return new PartialViewResult();
+        }
+
+        public string SendMessage(string to, string text, string subject = "")
         {
             _serviceManager.SendMessage(text, subject, to);
 
-            return "ready";
+            return "Message has been sent";
         }
 
         public string TestSend(string text = "test text", string subject = "Subject",
@@ -56,6 +64,15 @@ namespace MyMail.Controllers
             _serviceManager.SendEncryptedMessage(text, subject, to);
 
             return "ready";
+        }
+
+        public PartialViewResult GetMessage(int index, string type)
+        {
+//            State t = (State) Enum.Parse(typeof (State), type);
+
+            Message_obj message = _serviceManager.GetMessage(index);
+
+            return PartialView(message);
         }
     }
 }

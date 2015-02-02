@@ -483,5 +483,13 @@ namespace MyMail.Models
             nmail.Key.ToList().Add(nsymm);
             
         }
+
+        public Message_obj GetMessage(int index)
+        {
+            lock (_curentAccount.MailAddress)
+            {
+                return _localMessages[index];
+            }
+        }
     }
 }

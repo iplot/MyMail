@@ -137,6 +137,7 @@
     <Content Include="Scripts\jquery-2.1.3.min.js" />
     <Content Include="Scripts\jquery.unobtrusive-ajax.js" />
     <Content Include="Scripts\jquery.unobtrusive-ajax.min.js" />
+    <Content Include="Scripts\MyScripts\Index.js" />
     <Content Include="Scripts\npm.js" />
     <EmbeddedResource Include="SymmKey.hbm.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -151,6 +152,7 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
+    <Compile Include="Infrastructure\MailsComparator.cs" />
     <Compile Include="Infrastructure\MyExtansions.cs" />
     <Compile Include="Infrastructure\NinjectDependencyResolver.cs" />
     <Compile Include="Infrastructure\MymailAuthorizationAttribute.cs" />

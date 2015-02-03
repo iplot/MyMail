@@ -96,13 +96,42 @@ namespace MyMail.Models
         //!!!!!!!!!!!!!!!!!!!!!!!!!!
         public void ChangeAccount(string email)
         {
+            //Прекращаем прослушку
+            if (_backgroundListener.IsAlive)
+                _backgroundListener.Interrupt();
+
             _curentAccount = _dBprovider.GetAccount(email);
 
+            //--------------------------------------------------------------------------------
+            _customiseAccount();
+            //------------------------------------------------------------------------------
+        }
+
+        private void _customiseAccount()
+        {
             //Задаем ключи
             _cryptoProvider.SetRsaKeys(_curentAccount.Key.ToList()[0].D, _curentAccount.Key.ToList()[0].E,
-                    _curentAccount.Key.ToList()[0].N, _curentAccount.Key.ToList()[0].DP,
-                    _curentAccount.Key.ToList()[0].DQ, _curentAccount.Key.ToList()[0].InverseQ,
-                    _curentAccount.Key.ToList()[0].P, _curentAccount.Key.ToList()[0].Q);
+                _curentAccount.Key.ToList()[0].N, _curentAccount.Key.ToList()[0].DP,
+                _curentAccount.Key.ToList()[0].DQ, _curentAccount.Key.ToList()[0].InverseQ,
+                _curentAccount.Key.ToList()[0].P, _curentAccount.Key.ToList()[0].Q);
+
+            _customiseServerWorkers();
+
+
+            //Получаем сообщения
+            //Cтоит подумать о асинхронности
+            _localMessages = _getSavedMessages(State.Incoming).ToList();
+            _localMessages.AddRange(_getSavedMessages(State.Outgoing).ToList());
+
+            //Сортируем письма в акаунте и локальном списке
+            _localMessages.Sort(new MailsComparator());
+            List<Mail> mails = _curentAccount.Mails.ToList();
+            mails.Sort(new MailsComparator());
+            _curentAccount.Mails = mails;
+
+            //Если слушатель не работает - включить
+            if (!_backgroundListener.IsAlive)
+                _backgroundListener.Start();
         }
 
         public string GetCurentAccountEmail()
@@ -130,21 +159,9 @@ namespace MyMail.Models
             {
                 _curentAccount = accounts.First();
 
-                //Задаем ключи
-                _cryptoProvider.SetRsaKeys(_curentAccount.Key.ToList()[0].D, _curentAccount.Key.ToList()[0].E,
-                    _curentAccount.Key.ToList()[0].N, _curentAccount.Key.ToList()[0].DP,
-                    _curentAccount.Key.ToList()[0].DQ, _curentAccount.Key.ToList()[0].InverseQ,
-                    _curentAccount.Key.ToList()[0].P, _curentAccount.Key.ToList()[0].Q);
-
-                _customiseServerWorkers();
-
-                //Cтоит подумать о асинхронности
-                _localMessages = _getSavedMessages(State.Incoming).ToList();
-                _localMessages.AddRange(_getSavedMessages(State.Outgoing).ToList());
-
-                //Если слушатель не работает - включить
-                if(!_backgroundListener.IsAlive)
-                    _backgroundListener.Start();
+                //-------------------------------------------------------------------------------------------
+                _customiseAccount();
+                //---------------------------------------------------------------------------------------------
 
                 return true;
             }
@@ -228,7 +245,6 @@ namespace MyMail.Models
             if (_curentAccount.Mails.ToArray().Length == 0)
                 return new List<Message_obj>();
 
-            //Убрать where !!! Обязательно!
             var uids = _curentAccount.Mails.Where(m => m.MailState == state).Select(m => m.Uid).ToArray();
 
             IEnumerable<Message_obj> mails = _driveProvider.getSavedMessages(
@@ -295,6 +311,7 @@ namespace MyMail.Models
                     MailAccount = _curentAccount,
                     Uid = message.Uid,
                     MailState = State.Incoming,
+                    Date = message.Date,
                     Attachments = new List<Attachment>()
                 };
 
@@ -302,7 +319,7 @@ namespace MyMail.Models
                 _dBprovider.SaveObject(m);
 
                 List<Mail> temp = _curentAccount.Mails.ToList();
-                temp.Add(m);
+                temp.Insert(0, m);
                 _curentAccount.Mails = temp;
 
                 //Аттачи для БД
@@ -326,7 +343,7 @@ namespace MyMail.Models
                 //Добавляем содержимое письма к массиву в программе
                 lock (_curentAccount.MailAddress)
                 {
-                    _localMessages.Add(message);
+                    _localMessages.Insert(0, message);
                 }
             }
             catch (Exception ex)
@@ -405,7 +422,7 @@ namespace MyMail.Models
             //Добавить в список писем
             lock (_curentAccount.MailAddress)
             {
-                _localMessages.Add(nmess);
+                _localMessages.Insert(0, nmess);
             }
 
             //Сохранить на диск
@@ -419,6 +436,7 @@ namespace MyMail.Models
                 MailAccount = _curentAccount,
                 Uid = uidStr,
                 MailState = State.Outgoing,
+                Date = nmess.Date,
                 Key = new List<SymmKey>()
             };
 
@@ -427,7 +445,7 @@ namespace MyMail.Models
             lock (_curentAccount.MailAddress)
             {
                 List<Mail> temp = _curentAccount.Mails.ToList();
-                temp.Add(nmail);
+                temp.Insert(0, nmail);
                 _curentAccount.Mails = temp;
             }
 

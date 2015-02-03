@@ -68,9 +68,9 @@ namespace MyMail.Controllers
 
         public PartialViewResult GetMessage(int index, string type)
         {
-//            State t = (State) Enum.Parse(typeof (State), type);
+            State mailType = (State) Enum.Parse(typeof (State), type);
 
-            Message_obj message = _serviceManager.GetMessage(index);
+            Message_obj message = _serviceManager.GetMessage(index - 1, mailType);
 
             return PartialView(message);
         }

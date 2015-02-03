@@ -41,9 +41,9 @@
 
             <div class="list-group" style = "text-align: center; margin-top: 10px;">
                 @Ajax.ActionLink("Incoming", "GetMails", new {mailsType = State.Incoming}, opts,
-                    new {@class = "list-group-item", onclick = "menuItemSelected()", data_type = "incoming"})
+                    new {@class = "list-group-item active",  data_type = "Incoming"})
                 @Ajax.ActionLink("Outgoing", "GetMails", new {mailsType = State.Outgoing}, opts,
-                    new { @class = "list-group-item", onclick = "menuItemSelected()", data_type = "outgoing" })
+                    new { @class = "list-group-item", onclick = "menuItemSelected()", data_type = "Outgoing" })
             </div>
         </div>
 
@@ -62,15 +62,41 @@
     <script src="~/Scripts/jquery.unobtrusive-ajax.js"></script>
 
     <script type="text/javascript">
-//        function menuItemSelected() {
-//            $("a.active").removeClass("active");
-//            $(this).addClass("active");
-//        }
+        
+        $(document).ready(function () {
+            //функция для a
+            $('.list-group-item').click(function () {
+                $('.list-group-item').each(function() {
+                    $(this).removeClass('active');
+                })
+                $(this).toggleClass("active");
+            });
+
+            //Для отправки письма
+            $(document).on('click', 'tr', function () {
+                    $.ajax({
+                        url: "../Home/GetMessage",
+                        type: "POST",
+                        data: ({
+                            'index': this.rowIndex,
+                            'type': $('.active').attr('data-type')
+                        }),
+                    success: function (data) {
+                        $("#contentDiv").html(data);
+                    },
+                    dataType: "html"
+                });
+            });
+        });
 
         function writeMessage() {
             $.get("../Home/PrepareSend", function(htmlNew) {
                 $("#contentDiv").html(htmlNew);
             }, "html");
+        }
+
+        function log(str) {
+            return console.log(str);
         }
 
         function sendMessage() {
@@ -86,21 +112,6 @@
                     alert(success);
                 }, "text");
         }
-
-        $(document).ready(function() {
-            $(document).on('click', 'tr', function () {
-                $.ajax({
-                    url: "../Home/GetMessage",
-                    type: "POST",
-                    data: ({
-                        'index': this.rowIndex
-                    }),
-                    success: function(data) {
-                        $("#contentDiv").html(data);
-                    },
-                    dataType: "html"
-                });
-        });
-    });
+        
     </script>
 }

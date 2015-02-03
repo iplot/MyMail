@@ -484,11 +484,19 @@ namespace MyMail.Models
             
         }
 
-        public Message_obj GetMessage(int index)
+        public Message_obj GetMessage(int index, State type)
         {
+            var mails = _curentAccount.Mails.Where(m => m.MailState == type).Select(m => m.Uid).ToList();
+
+            string uid = "";
+            if (mails.Count != 0)
+            {
+                uid = mails[index];
+            }
+
             lock (_curentAccount.MailAddress)
             {
-                return _localMessages[index];
+                return _localMessages.Where(m => m.Uid == uid).Select(m => m).FirstOrDefault();
             }
         }
     }

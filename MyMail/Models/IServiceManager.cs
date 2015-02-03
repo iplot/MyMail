@@ -17,6 +17,6 @@ namespace MyMail.Models
         IEnumerable<Message_obj> GetMessages(State type);
         Mail SendMessage(string text, string subject, string to);
         void SendEncryptedMessage(string text, string subject, string to);
-        Message_obj GetMessage(int index);
+        Message_obj GetMessage(int index, State type);
     }
 }

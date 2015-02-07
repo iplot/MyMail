@@ -58,21 +58,39 @@ namespace MyMail.Controllers
             return "Message has been sent";
         }
 
-        public string TestSend(string text = "test text", string subject = "Subject",
-            string to = "iplotnikov94@gmail.com")
+        public string SendEncryptedMessage(string to, string text, string subject = "")
         {
             _serviceManager.SendEncryptedMessage(text, subject, to);
 
-            return "ready";
+            return "Message has been sent";
         }
 
         public PartialViewResult GetMessage(int index, string type)
+        {
+            ViewBag.Index = index;
+            ViewBag.Type = type;
+
+            var message = _getMessage(index, type);
+
+            return PartialView(message);
+        }
+
+        private Message_obj _getMessage(int index, string type)
         {
             State mailType = (State) Enum.Parse(typeof (State), type);
 
             Message_obj message = _serviceManager.GetMessage(index - 1, mailType);
 
-            return PartialView(message);
+            return message;
+        }
+
+        public FileResult GetAttachment(int index, string type, string name)
+        {
+            var message = _getMessage(index, type);
+
+            var attach = message.Attachments.Where(att => att.Name == name).Select(att => att).FirstOrDefault();
+
+            return File(attach.Data, "application/octet-stream", attach.Name);
         }
     }
 }

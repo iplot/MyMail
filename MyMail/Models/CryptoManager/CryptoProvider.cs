@@ -15,6 +15,7 @@ namespace MyMail.Models.CryptoManager
         public DES Des { get; private set; }
 
         public RSAParameters RsaKeys { get; private set; }
+        public DSAParameters DsaKeys { get; private set; }
 
         public CryptoProvider()
         {
@@ -28,6 +29,14 @@ namespace MyMail.Models.CryptoManager
             RsaKeys = rsa.ExportParameters(true);
 
             return RsaKeys;
+        }
+
+        public DSAParameters NewDsaKeys()
+        {
+            DSACryptoServiceProvider dsa = new DSACryptoServiceProvider();
+            DsaKeys = dsa.ExportParameters(true);
+
+            return DsaKeys;
         }
 
         //Задать ключ RSA
@@ -47,6 +56,24 @@ namespace MyMail.Models.CryptoManager
             };
 
             RsaKeys = param;
+        }
+
+        //Задать ключ Dsa
+        public void SetDsaKeys(int counter, string G, string J, string P, string Q, string seed, string X, string Y)
+        {
+            DSAParameters param = new DSAParameters
+            {
+                Counter = counter,
+                G = Convert.FromBase64String(G),
+                J = Convert.FromBase64String(J),
+                P = Convert.FromBase64String(P),
+                Q = Convert.FromBase64String(Q),
+                Seed = Convert.FromBase64String(seed),
+                X = Convert.FromBase64String(X),
+                Y = Convert.FromBase64String(Y)
+            };
+
+            DsaKeys = param;
         }
 
         //Возвращаем зашифрованные данные в виде строки base64 
@@ -141,6 +168,45 @@ namespace MyMail.Models.CryptoManager
                     return Encoding.ASCII.GetString(memoryOut.ToArray());//с этим могут быть проблемы
                 }
             }
+        }
+
+        public string SubscribeMail(byte[] mailData)
+        {
+            DSACryptoServiceProvider Dsa = new DSACryptoServiceProvider();
+
+            Dsa.ImportParameters(DsaKeys);
+
+            byte[] sign = Dsa.SignData(mailData);
+
+            return Convert.ToBase64String(sign);
+        }
+
+        public bool VerifyMail(byte[] signData, byte[] mailHash, SignKey key)
+        {
+            DSAParameters dsaKey = new DSAParameters
+            {
+                Counter = key.Counter,
+                G = Convert.FromBase64String(key.G),
+                J = Convert.FromBase64String(key.J),
+                P = Convert.FromBase64String(key.P),
+                Q = Convert.FromBase64String(key.Q),
+                Seed = Convert.FromBase64String(key.Seed),
+                X = Convert.FromBase64String(key.X),
+                Y = Convert.FromBase64String(key.Y)
+            };
+
+            DSACryptoServiceProvider Dsa = new DSACryptoServiceProvider();
+
+            Dsa.ImportParameters(dsaKey);
+
+            return Dsa.VerifyData(signData, mailHash);
+        }
+
+        public byte[] ComputHash(byte[] mailData)
+        {
+            SHA1 sha = new SHA1CryptoServiceProvider();;
+
+            return sha.ComputeHash(mailData);
         }
     }
 }

@@ -1,15 +1,17 @@
 ﻿
+
 $(document).ready(function () {
+    var mailIndex = 0;
+
     //функция для a
-    $('.list-group-item').click(function () {
+    $('.list-group-item').click(function() {
         $('.list-group-item').each(function() {
             $(this).removeClass('active');
         })
         $(this).toggleClass("active");
     });
 
-    //Для отправки письма
-    $(document).on('click', 'tr', function () {
+    $(document).on('click', 'tr', function() {
         $.ajax({
             url: "../Home/GetMessage",
             type: "POST",
@@ -17,7 +19,7 @@ $(document).ready(function () {
                 'index': this.rowIndex,
                 'type': $('.active').attr('data-type')
             }),
-            success: function (data) {
+            success: function(data) {
                 $("#contentDiv").html(data);
             },
             dataType: "html"
@@ -38,7 +40,9 @@ function sendMessage() {
         this.text = $("#text").text();
     }
 
-    $.post("../Home/SendMessage",
+    var url = $('#isEncrypt').is(':checked') ? '../Home/SendEncryptedMessage' : '../Home/SendMessage';
+
+    $.post(url,
         new Mail(),
         function(success) {
             alert(success);

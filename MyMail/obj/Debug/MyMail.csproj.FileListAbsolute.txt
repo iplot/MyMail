@@ -37,3 +37,4 @@ D:\GitRepos\MyMail\MyMail\bin\OpenPop.dll
 D:\GitRepos\MyMail\MyMail\bin\NetWork.pdb
 D:\GitRepos\MyMail\MyMail\bin\SymmKey.hbm.xml
 D:\GitRepos\MyMail\MyMail\bin\AsymmKey.hbm.xml
+D:\GitRepos\MyMail\MyMail\bin\SignKey.hbm.xml

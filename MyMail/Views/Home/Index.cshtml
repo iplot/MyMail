@@ -23,6 +23,7 @@
             <ul class="nav navbar-nav">
                 <li><a>User: @Session["Login"]</a></li>
                 <li><a>@ViewBag.Email</a></li>
+                <li>@Html.ActionLink("Add account", "AddServerAccount", "Account")</li>
             </ul>
         </div><!--/.nav-collapse -->
     </div>

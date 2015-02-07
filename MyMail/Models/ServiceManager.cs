@@ -14,6 +14,7 @@ using MyMail.Models.Entities;
 using NetWork.MailReciever;
 using NetWork.MailSender;
 using NHibernate.Mapping;
+using System.Security.Cryptography;
 using Attachment = MyMail.Models.Entities.Attachment;
 
 namespace MyMail.Models
@@ -115,6 +116,11 @@ namespace MyMail.Models
                 _curentAccount.Key.ToList()[0].DQ, _curentAccount.Key.ToList()[0].InverseQ,
                 _curentAccount.Key.ToList()[0].P, _curentAccount.Key.ToList()[0].Q);
 
+            _cryptoProvider.SetDsaKeys(_curentAccount.Sign.ToList()[0].Counter, _curentAccount.Sign.ToList()[0].G,
+                _curentAccount.Sign.ToList()[0].J, _curentAccount.Sign.ToList()[0].P,
+                _curentAccount.Sign.ToList()[0].Q, _curentAccount.Sign.ToList()[0].Seed,
+                _curentAccount.Sign.ToList()[0].X, _curentAccount.Sign.ToList()[0].Y);
+
             _customiseServerWorkers();
 
 
@@ -204,13 +210,35 @@ namespace MyMail.Models
                     AccountOwner = account
                 };
 
-                //Записываем ключ в базу
+                //!!!!!new
+                _cryptoProvider.NewDsaKeys();
+                SignKey sign = new SignKey
+                {
+                    Counter = _cryptoProvider.DsaKeys.Counter,
+                    G = Convert.ToBase64String(_cryptoProvider.DsaKeys.G),
+                    J = Convert.ToBase64String(_cryptoProvider.DsaKeys.J),
+                    P = Convert.ToBase64String(_cryptoProvider.DsaKeys.P),
+                    Q = Convert.ToBase64String(_cryptoProvider.DsaKeys.Q),
+                    Seed = Convert.ToBase64String(_cryptoProvider.DsaKeys.Seed),
+                    X = Convert.ToBase64String(_cryptoProvider.DsaKeys.X),
+                    Y = Convert.ToBase64String(_cryptoProvider.DsaKeys.Y),
+                    AccountOwner = account
+                };
+
+                //Записываем ключи в базу
                 _dBprovider.SaveObject(key);
+                _dBprovider.SaveObject(sign);
 
                 if (account.Key == null)
                 {
                     account.Key = new List<AsymmKey>{key};
 //                    account.Key.ToList().Add(key);
+                }
+
+                //!!!new
+                if (account.Sign == null)
+                {
+                    account.Sign = new List<SignKey> {sign};
                 }
 
                 //Если акаунта не было, устанавливаем его
@@ -478,9 +506,6 @@ namespace MyMail.Models
 
             //Сюда передать открытый ключ получаетля!!!!!
             string symmKeys = _cryptoProvider.GetEncryptedSymmKey(key);
-
-
-
 
             _mailSender.AddAditionalHeader("KeyLen", symmKeys.Length.ToString());
 

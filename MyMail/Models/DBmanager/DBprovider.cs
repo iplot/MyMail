@@ -62,23 +62,30 @@ namespace MyMail.Models.DBmanager
 
         public AsymmKey GetAsymmKey(string email)
         {
-            using (var session = _sessionFactory.OpenSession())
+            try
             {
-                using (var transaction = session.BeginTransaction())
+                using (var session = _sessionFactory.OpenSession())
                 {
-                    var key = (from acc in session.Query<Account>()
-                        where acc.MailAddress == email
-                        select acc.Key).ToList();
+                    using (var transaction = session.BeginTransaction())
+                    {
+                        var key = (from acc in session.Query<Account>()
+                            where acc.MailAddress == email
+                            select acc.Key).ToList();
 
-                    if (key != null || key.ToList().Count != 0)
-                    {
-                        return key[0].First();
-                    }
-                    else
-                    {
-                        return null;
+                        if (key != null || key.ToList().Count != 0)
+                        {
+                            return key[0].First();
+                        }
+                        else
+                        {
+                            return null;
+                        }
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
             }
         }
 

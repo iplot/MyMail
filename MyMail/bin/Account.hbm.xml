@@ -21,5 +21,9 @@
       <key column="AccountId"/>
       <one-to-many class="AsymmKey"/>
     </set>
+    <set name="Sign" table="SignKeys" cascade="all-delete-orphan" lazy="false">
+      <key column="AccountId"/>
+      <one-to-many class="SignKey"/>
+    </set>
   </class>
 </hibernate-mapping>

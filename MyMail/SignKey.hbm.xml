@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8" ?> 
+<hibernate-mapping xmlns="urn:nhibernate-mapping-2.2" namespace="MyMail.Models.Entities" assembly="MyMail">
+  <class name="SignKey" table="SignKeys">
+    <id name="Id" column="Id">
+      <generator class="native"/>
+    </id>
+    <property name="Counter" column="Counter"/>
+    <property name="G" column="G"/>
+    <property name="J" column="J"/>
+    <property name="P" column="P"/>
+    <property name="Q" column="Q"/>
+    <property name="Seed" column="Seed"/>
+    <property name="X" column="X"/>
+    <property name="Y" column="Y"/>
+    <many-to-one name="AccountOwner" column="AccountId"/>
+  </class>
+</hibernate-mapping>

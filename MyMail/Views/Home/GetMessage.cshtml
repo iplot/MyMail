@@ -1,7 +1,20 @@
-﻿@using NetWork.MailReciever
+﻿@using MyMail.Models.Entities
+@using NetWork.MailReciever
 @model Message_obj
 
 <div>
     <h2>@Model.Subject</h2>
     <p>@Model.Text</p>
+
+    @if (Model.Attachments != null)
+    {
+        <ul>
+            @foreach (var attach in Model.Attachments)
+            {
+                <li>@Html.ActionLink(@attach.Name, "GetAttachment", 
+                    new{index = ViewBag.Index, type = ViewBag.Type, name = attach.Name})
+                </li>
+            }
+        </ul>
+    }
 </div>

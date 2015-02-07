@@ -142,6 +142,9 @@
     <EmbeddedResource Include="SymmKey.hbm.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
+    <EmbeddedResource Include="SignKey.hbm.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>
@@ -165,6 +168,7 @@
     <Compile Include="Models\DBmanager\Entities\Mail.cs" />
     <Compile Include="Models\DBmanager\Entities\Metadata\AccountMetaData.cs" />
     <Compile Include="Models\DBmanager\Entities\Metadata\UserMetaData.cs" />
+    <Compile Include="Models\DBmanager\Entities\SignKey.cs" />
     <Compile Include="Models\DBmanager\Entities\SymmKey.cs" />
     <Compile Include="Models\DBmanager\Entities\User.cs" />
     <Compile Include="Models\DBmanager\IDBprovider.cs" />

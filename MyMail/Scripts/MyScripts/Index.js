@@ -1,7 +1,6 @@
 ﻿
 
 $(document).ready(function () {
-    var mailIndex = 0;
 
     //функция для a
     $('.list-group-item').click(function() {
@@ -38,6 +37,7 @@ function sendMessage() {
         this.to = $("#to").val();
         this.subject = $("#subject").val();
         this.text = $("#text").text();
+        this.needSign = $("#sign").is(':checked');
     }
 
     var url = $('#isEncrypt').is(':checked') ? '../Home/SendEncryptedMessage' : '../Home/SendMessage';

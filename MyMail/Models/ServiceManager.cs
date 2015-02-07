@@ -288,7 +288,6 @@ namespace MyMail.Models
         {
             var uids = _curentAccount.Mails.Select(m => m.Uid).ToArray();
 
-//            IEnumerable<Message_obj> incoming = _mailResiever.GetIncomingMails(uids);
             try
             {
                 foreach (Message_obj message in _mailResiever.GetIncomingMails(uids))
@@ -308,6 +307,25 @@ namespace MyMail.Models
                             Convert.FromBase64String(message.Text),
                             Convert.FromBase64String(symm_key),
                             Convert.FromBase64String(symm_iv));
+                    }
+                    else
+                    {
+                        message.Text = message.Text.Replace("\r\n", "");
+                    }
+
+                    //если подписано, проверяем на целостность
+                    if (!String.IsNullOrEmpty(message.Sign))
+                    {
+                        byte[] bodyHash = _cryptoProvider.ComputHash(
+                            Encoding.ASCII.GetBytes(message.Text));
+
+                        var pubKey = _dBprovider.GetSignKey(message.From);
+
+                        bool verify = _cryptoProvider.VerifyMail(Convert.FromBase64String(message.Sign), bodyHash, pubKey);
+
+                        //Испорченое сообщение пропускаем
+                        if (!verify)
+                            continue;
                     }
 
                     _saveIncomingMessage(message);
@@ -411,10 +429,19 @@ namespace MyMail.Models
         //Отправка
         //----------------------------------------------------------------------------------------------
         //Переделать для нескольких отправителей и добавить вложения
-        public Mail SendMessage(string text, string subject, string to)
+        public Mail SendMessage(string text, string subject, string to, bool needSign)
         {
             try
             {
+                if (needSign)
+                {
+                    //Добавить подпись
+                    //------------------------------------------------------
+                    string sign = _cryptoProvider.SignMail(Encoding.ASCII.GetBytes(text));
+                    _mailSender.AddAditionalHeader("Sign", sign);
+                    //------------------------------------------------------
+                }
+
                 //Отправить письмо
                 _mailSender.CreateMessage(text, false, subject);
                 _mailSender.AddReceivers(to);
@@ -491,12 +518,10 @@ namespace MyMail.Models
         }
 
         //Отправка шифрованного сообщения
-        public void SendEncryptedMessage(string text, string subject, string to)
+        public void SendEncryptedMessage(string text, string subject, string to, bool needSign)
         {
             string ntext = _cryptoProvider.EncrytpData(Encoding.ASCII.GetBytes(text));
             string nsubject = _cryptoProvider.EncrytpData(Encoding.ASCII.GetBytes(subject));
-//            string ntext = _cryptoProvider.EncrytpData(Convert.FromBase64String(text));
-//            string nsubject = _cryptoProvider.EncrytpData(Convert.FromBase64String(subject));
 
             string Key = Convert.ToBase64String(_cryptoProvider.Des.Key);
             string IV = Convert.ToBase64String(_cryptoProvider.Des.IV);
@@ -509,9 +534,18 @@ namespace MyMail.Models
 
             _mailSender.AddAditionalHeader("KeyLen", symmKeys.Length.ToString());
 
+            if (needSign)
+            {
+                //Добавить подпись
+                //------------------------------------------------------
+                string sign = _cryptoProvider.SignMail(Encoding.ASCII.GetBytes(text));
+                _mailSender.AddAditionalHeader("Sign", sign);
+                //------------------------------------------------------
+            }
+
             symmKeys += ntext;
 
-            var nmail = SendMessage(symmKeys, nsubject, to);
+            var nmail = SendMessage(symmKeys, nsubject, to, false);
 
             //Сохранение ключей
             SymmKey nsymm = new SymmKey

@@ -78,7 +78,36 @@ namespace MyMail.Models.DBmanager
                         }
                         else
                         {
-                            return null;
+                            throw new Exception();
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        public SignKey GetSignKey(string email)
+        {
+            try
+            {
+                using (var session = _sessionFactory.OpenSession())
+                {
+                    using (var transaction = session.BeginTransaction())
+                    {
+                        var signKey = session.Query<Account>()
+                            .Where(acc => acc.MailAddress == email)
+                            .Select(acc => acc.Sign).ToList();
+
+                        if (signKey.Count != 0)
+                        {
+                            return signKey[0].First();
+                        }
+                        else
+                        {
+                            throw new Exception();
                         }
                     }
                 }

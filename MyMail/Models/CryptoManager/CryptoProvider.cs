@@ -170,7 +170,7 @@ namespace MyMail.Models.CryptoManager
             }
         }
 
-        public string SubscribeMail(byte[] mailData)
+        public string SignMail(byte[] mailData)
         {
             DSACryptoServiceProvider Dsa = new DSACryptoServiceProvider();
 
@@ -199,7 +199,7 @@ namespace MyMail.Models.CryptoManager
 
             Dsa.ImportParameters(dsaKey);
 
-            return Dsa.VerifyData(signData, mailHash);
+            return Dsa.VerifyHash(mailHash, "SHA1", signData);
         }
 
         public byte[] ComputHash(byte[] mailData)

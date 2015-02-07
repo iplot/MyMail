@@ -51,16 +51,16 @@ namespace MyMail.Controllers
             return new PartialViewResult();
         }
 
-        public string SendMessage(string to, string text, string subject = "")
+        public string SendMessage(string to, string text, bool needSign, string subject = "")
         {
-            _serviceManager.SendMessage(text, subject, to);
+            _serviceManager.SendMessage(text, subject, to, needSign);
 
             return "Message has been sent";
         }
 
-        public string SendEncryptedMessage(string to, string text, string subject = "")
+        public string SendEncryptedMessage(string to, string text, bool needSign, string subject = "")
         {
-            _serviceManager.SendEncryptedMessage(text, subject, to);
+            _serviceManager.SendEncryptedMessage(text, subject, to, needSign);
 
             return "Message has been sent";
         }

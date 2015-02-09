@@ -165,7 +165,8 @@ namespace MyMail.Models.CryptoManager
 
                     }
 
-                    return Encoding.ASCII.GetString(memoryOut.ToArray());//с этим могут быть проблемы
+//                    return Encoding.ASCII.GetString(memoryOut.ToArray());//с этим могут быть проблемы
+                    return Encoding.UTF8.GetString(memoryOut.ToArray());
                 }
             }
         }

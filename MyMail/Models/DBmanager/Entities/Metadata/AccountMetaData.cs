@@ -22,6 +22,7 @@ namespace MyMail.Models.Entities
 
         [Required]
         [UIHint("EmailAddress")]
+        [RegularExpression("/^([a-z0-9_.-])+@[a-z0-9-]+.([a-z]{2,4}.)?[a-z]{2,4}$/i")]
         public virtual string MailAddress { get; set; }
 
         [Required]

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
@@ -53,16 +54,30 @@ namespace MyMail.Controllers
 
         public string SendMessage(string to, string text, bool needSign, string subject = "")
         {
-            _serviceManager.SendMessage(text, subject, to, needSign);
+            if (_serviceManager.SendMessage(text, subject, to, needSign) != null)
+            {
+                return "Message has been sent";
+            }
+            else
+            {
+                return "Message can not be send";
+            }
 
-            return "Message has been sent";
+            
         }
 
         public string SendEncryptedMessage(string to, string text, bool needSign, string subject = "")
         {
-            _serviceManager.SendEncryptedMessage(text, subject, to, needSign);
+            if (_serviceManager.SendEncryptedMessage(text, subject, to, needSign))
+            {
+                return "Message has been sent";
+            }
+            else
+            {
+                return "Message can not be send";
+            }
 
-            return "Message has been sent";
+            
         }
 
         public PartialViewResult GetMessage(int index, string type)
@@ -90,7 +105,9 @@ namespace MyMail.Controllers
 
             var attach = message.Attachments.Where(att => att.Name == name).Select(att => att).FirstOrDefault();
 
-            return File(attach.Data, "application/octet-stream", attach.Name);
+            byte[] data = (attach.Data as MemoryStream).ToArray();
+
+            return File(data, "application/octet-stream", attach.Name);
         }
     }
 }

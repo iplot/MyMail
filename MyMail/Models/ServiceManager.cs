@@ -129,11 +129,11 @@ namespace MyMail.Models
             _localMessages = _getSavedMessages(State.Incoming).ToList();
             _localMessages.AddRange(_getSavedMessages(State.Outgoing).ToList());
 
-            //Сортируем письма в акаунте и локальном списке
-            _localMessages.Sort(new MailsComparator());
-            List<Mail> mails = _curentAccount.Mails.ToList();
-            mails.Sort(new MailsComparator());
-            _curentAccount.Mails = mails;
+//            //Сортируем письма в акаунте и локальном списке
+//            _localMessages.Sort(new MailsComparator());
+//            List<Mail> mails = _curentAccount.Mails.ToList();
+//            mails.Sort(new MailsComparator());
+//            _curentAccount.Mails = mails;
 
             //Если слушатель не работает - включить
             if (!_backgroundListener.IsAlive)
@@ -292,6 +292,7 @@ namespace MyMail.Models
             {
                 foreach (Message_obj message in _mailResiever.GetIncomingMails(uids))
                 {
+                    message.Text = message.Text.Replace("\r\n", "");
                     if (message.KeyLength > 0)
                     {
                         string symm_key = message.Text.Substring(0, message.KeyLength/2);
@@ -454,7 +455,8 @@ namespace MyMail.Models
             catch (Exception ex)
             {
                 //!!!!
-                throw ex;
+//                throw ex;
+                return null;
             }
         }
 
@@ -518,16 +520,20 @@ namespace MyMail.Models
         }
 
         //Отправка шифрованного сообщения
-        public void SendEncryptedMessage(string text, string subject, string to, bool needSign)
+        public bool SendEncryptedMessage(string text, string subject, string to, bool needSign)
         {
-            string ntext = _cryptoProvider.EncrytpData(Encoding.ASCII.GetBytes(text));
-            string nsubject = _cryptoProvider.EncrytpData(Encoding.ASCII.GetBytes(subject));
+//            string ntext = _cryptoProvider.EncrytpData(Encoding.ASCII.GetBytes(text));
+            string ntext = _cryptoProvider.EncrytpData(Encoding.UTF8.GetBytes(text));
+            string nsubject = _cryptoProvider.EncrytpData(Encoding.UTF8.GetBytes(subject));
 
             string Key = Convert.ToBase64String(_cryptoProvider.Des.Key);
             string IV = Convert.ToBase64String(_cryptoProvider.Des.IV);
 
 
             AsymmKey key = _dBprovider.GetAsymmKey(to);
+
+            if (key == null)
+                return false;
 
             //Сюда передать открытый ключ получаетля!!!!!
             string symmKeys = _cryptoProvider.GetEncryptedSymmKey(key);
@@ -558,7 +564,8 @@ namespace MyMail.Models
             _dBprovider.SaveObject(nsymm);
 
             nmail.Key.ToList().Add(nsymm);
-            
+
+            return true;
         }
 
         public Message_obj GetMessage(int index, State type)

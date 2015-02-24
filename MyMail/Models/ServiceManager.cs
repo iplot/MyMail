@@ -129,11 +129,11 @@ namespace MyMail.Models
             _localMessages = _getSavedMessages(State.Incoming).ToList();
             _localMessages.AddRange(_getSavedMessages(State.Outgoing).ToList());
 
-//            //Сортируем письма в акаунте и локальном списке
-//            _localMessages.Sort(new MailsComparator());
-//            List<Mail> mails = _curentAccount.Mails.ToList();
-//            mails.Sort(new MailsComparator());
-//            _curentAccount.Mails = mails;
+            //Сортируем письма в акаунте и локальном списке
+            _localMessages.Sort(new MailsComparator());
+            List<Mail> mails = _curentAccount.Mails.ToList();
+            mails.Sort(new MailsComparator());
+            _curentAccount.Mails = mails;
 
             //Если слушатель не работает - включить
             if (!_backgroundListener.IsAlive)

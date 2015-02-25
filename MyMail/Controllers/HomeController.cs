@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
 using System.Web.Security;
@@ -25,7 +26,7 @@ namespace MyMail.Controllers
         }
 
         // GET: Home
-        public ActionResult Index()
+        public async Task<ActionResult> Index()
         {
             //Если не логинился - залогинься
             if (_serviceManager == null || System.Web.HttpContext.Current.Session["Login"] == null)
@@ -33,7 +34,7 @@ namespace MyMail.Controllers
 
             //Если аккаунт не выбран пробуем установить первый из списка
             if (_serviceManager.GetCurentAccountEmail() == "")
-                _serviceManager.TrySetCurentAcount((string)System.Web.HttpContext.Current.Session["Login"]);
+                await _serviceManager.TrySetCurentAcount((string)System.Web.HttpContext.Current.Session["Login"]);
 
             ViewBag.Email = _serviceManager.GetCurentAccountEmail();
 
@@ -52,9 +53,9 @@ namespace MyMail.Controllers
             return new PartialViewResult();
         }
 
-        public string SendMessage(string to, string text, bool needSign, string subject = "")
+        public async Task<string> SendMessage(string to, string text, bool needSign, string subject = "")
         {
-            if (_serviceManager.SendMessage(text, subject, to, needSign) != null)
+            if (await _serviceManager.SendMessage(text, subject, to, needSign) != null)
             {
                 return "Message has been sent";
             }
@@ -62,13 +63,11 @@ namespace MyMail.Controllers
             {
                 return "Message can not be send";
             }
-
-            
         }
 
-        public string SendEncryptedMessage(string to, string text, bool needSign, string subject = "")
+        public async Task<string> SendEncryptedMessage(string to, string text, bool needSign, string subject = "")
         {
-            if (_serviceManager.SendEncryptedMessage(text, subject, to, needSign))
+            if (await _serviceManager.SendEncryptedMessage(text, subject, to, needSign))
             {
                 return "Message has been sent";
             }
@@ -76,8 +75,6 @@ namespace MyMail.Controllers
             {
                 return "Message can not be send";
             }
-
-            
         }
 
         public PartialViewResult GetMessage(int index, string type)

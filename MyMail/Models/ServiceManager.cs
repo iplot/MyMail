@@ -46,9 +46,9 @@ namespace MyMail.Models
             _backgroundListener.IsBackground = true;
         }
 
-        public bool IsUserPresent(string login, string password)
+        public async Task<bool> IsUserPresent(string login, string password)
         {
-            var user = _dBprovider.GetUser(login);
+            var user = await _dBprovider.GetUser(login);
 
             if (user != null && user.Password == password)
             {
@@ -60,7 +60,7 @@ namespace MyMail.Models
             }
         }
 
-        public bool AddUser(string login, string password)
+        public async Task<bool> AddUser(string login, string password)
         {
             User user = new User
             {
@@ -70,7 +70,7 @@ namespace MyMail.Models
 
             try
             {
-                _dBprovider.SaveObject(user);
+                await _dBprovider.SaveObject(user);
 
                 return true;
             }
@@ -80,11 +80,11 @@ namespace MyMail.Models
             }
         }
 
-        public bool AddUser(User user)
+        public async Task<bool> AddUser(User user)
         {
             try
             {
-                _dBprovider.SaveObject(user);
+                await _dBprovider.SaveObject(user);
 
                 return true;
             }
@@ -95,20 +95,20 @@ namespace MyMail.Models
         }
 
         //!!!!!!!!!!!!!!!!!!!!!!!!!!
-        public void ChangeAccount(string email)
+        public async void ChangeAccount(string email)
         {
             //Прекращаем прослушку
             if (_backgroundListener.IsAlive)
                 _backgroundListener.Interrupt();
 
-            _curentAccount = _dBprovider.GetAccount(email);
+            _curentAccount = await _dBprovider.GetAccount(email);
 
             //--------------------------------------------------------------------------------
             _customiseAccount();
             //------------------------------------------------------------------------------
         }
 
-        private void _customiseAccount()
+        private async Task _customiseAccount()
         {
             //Задаем ключи
             _cryptoProvider.SetRsaKeys(_curentAccount.Key.ToList()[0].D, _curentAccount.Key.ToList()[0].E,
@@ -126,8 +126,10 @@ namespace MyMail.Models
 
             //Получаем сообщения
             //Cтоит подумать о асинхронности
-            _localMessages = _getSavedMessages(State.Incoming).ToList();
-            _localMessages.AddRange(_getSavedMessages(State.Outgoing).ToList());
+            _localMessages = (await _getSavedMessages(State.Incoming)).ToList();
+            _localMessages.AddRange(
+                (await _getSavedMessages(State.Outgoing))
+                .ToList());
 
             //Сортируем письма в акаунте и локальном списке
             _localMessages.Sort(new MailsComparator());
@@ -145,16 +147,17 @@ namespace MyMail.Models
             return _curentAccount == null ? "" : _curentAccount.MailAddress;
         }
 
-        public IEnumerable<string> GetUsersAccountEmails(string login)
+        public async Task<IEnumerable<string>> GetUsersAccountEmails(string login)
         {
-            return _dBprovider.GetUsersAccounts(login).Select(x => x.MailAddress);
+            return (await _dBprovider.GetUsersAccounts(login))
+                .Select(x => x.MailAddress);
         }
 
         //Выбрать первый акаунт из списка
         //!!!!!!!!!!!!!!!!!!!!!
-        public bool TrySetCurentAcount(string login)
+        public async Task<bool> TrySetCurentAcount(string login)
         {
-            var accounts = _dBprovider.GetUsersAccounts(login).ToArray();
+            var accounts = (await _dBprovider.GetUsersAccounts(login)).ToArray();
 
             //Если уже есть аккаунт, то новый не надо
             if (accounts.Length == 0 || _curentAccount != null)
@@ -166,7 +169,7 @@ namespace MyMail.Models
                 _curentAccount = accounts.First();
 
                 //-------------------------------------------------------------------------------------------
-                _customiseAccount();
+                await _customiseAccount();
                 //---------------------------------------------------------------------------------------------
 
                 return true;
@@ -182,18 +185,19 @@ namespace MyMail.Models
             _mailResiever.SetCredentials(_curentAccount.MailAddress, _curentAccount.MailPassword);
         }
 
-        public bool AddAccount(Account account, string login)
+        //!!!!!!!!!!!new
+        public async Task<bool> AddAccount(Account account, string login)
         {
             try
             {
-                User user = _dBprovider.GetUser(login);
+                User user = await _dBprovider.GetUser(login);
 
                 account.AccountUser = user;
 
                 account.LocalPath = _driveProvider.addAccountFolder(account.MailAddress);
 
                 
-                _dBprovider.SaveObject(account);
+                await _dBprovider.SaveObject(account);
 
                 //Записываем ключи акаунта
                 _cryptoProvider.NewRsaKeys();
@@ -210,7 +214,6 @@ namespace MyMail.Models
                     AccountOwner = account
                 };
 
-                //!!!!!new
                 _cryptoProvider.NewDsaKeys();
                 SignKey sign = new SignKey
                 {
@@ -226,8 +229,8 @@ namespace MyMail.Models
                 };
 
                 //Записываем ключи в базу
-                _dBprovider.SaveObject(key);
-                _dBprovider.SaveObject(sign);
+                await _dBprovider.SaveObject(key);
+                await _dBprovider.SaveObject(sign);
 
                 if (account.Key == null)
                 {
@@ -235,7 +238,6 @@ namespace MyMail.Models
 //                    account.Key.ToList().Add(key);
                 }
 
-                //!!!new
                 if (account.Sign == null)
                 {
                     account.Sign = new List<SignKey> {sign};
@@ -247,14 +249,16 @@ namespace MyMail.Models
                     _curentAccount = account;
                     _curentAccount.Mails = new List<Mail>();
 
-                    _customiseServerWorkers();
+//                    _customiseServerWorkers();
 
-                    //async
-                    _localMessages = _getSavedMessages(State.Incoming).ToList();
+                    _customiseAccount();
 
-                    //Возможно лишнее
-                    if(!_backgroundListener.IsAlive)
-                        _backgroundListener.Start();
+//                    //async
+//                    _localMessages = (await _getSavedMessages(State.Incoming)).ToList();
+//
+//                    //Возможно лишнее
+//                    if(!_backgroundListener.IsAlive)
+//                        _backgroundListener.Start();
                 }
 
                 return true;
@@ -268,14 +272,14 @@ namespace MyMail.Models
         //Возможно сделать асинхронным
         //Внутреннее получение писем. Когда выбирается аккаунт надо загрузить уже записанные письма
         //Не путать с получением писем для выдачи пользователю
-        private IEnumerable<Message_obj> _getSavedMessages(State state)
+        private async Task<IEnumerable<Message_obj>> _getSavedMessages(State state)
         {
             if (_curentAccount.Mails.ToArray().Length == 0)
                 return new List<Message_obj>();
 
             var uids = _curentAccount.Mails.Where(m => m.MailState == state).Select(m => m.Uid).ToArray();
 
-            IEnumerable<Message_obj> mails = _driveProvider.getSavedMessages(
+            IEnumerable<Message_obj> mails = await _driveProvider.getSavedMessages(
                 Path.Combine(_curentAccount.LocalPath, Enum.GetName(typeof (State), state)),
                 uids
                 );
@@ -284,7 +288,7 @@ namespace MyMail.Models
         }
 
         //!!!!
-        private void _listenOnMails()
+        private async void _listenOnMails()
         {
             var uids = _curentAccount.Mails.Select(m => m.Uid).ToArray();
 
@@ -320,7 +324,7 @@ namespace MyMail.Models
                         byte[] bodyHash = _cryptoProvider.ComputHash(
                             Encoding.ASCII.GetBytes(message.Text));
 
-                        var pubKey = _dBprovider.GetSignKey(message.From);
+                        var pubKey = await _dBprovider.GetSignKey(message.From);
 
                         bool verify = _cryptoProvider.VerifyMail(Convert.FromBase64String(message.Sign), bodyHash, pubKey);
 
@@ -338,7 +342,7 @@ namespace MyMail.Models
             }
         }
 
-        private void _saveIncomingMessage(Message_obj message)
+        private async void _saveIncomingMessage(Message_obj message)
         {
             try
             {
@@ -347,7 +351,7 @@ namespace MyMail.Models
                 message.Uid = message.Uid.CleanString();
 
                 //А еще на диск сохрани!
-                _driveProvider.SaveMessage(
+                await _driveProvider.SaveMessage(
                     Path.Combine(_curentAccount.LocalPath, Enum.GetName(typeof(State), State.Incoming)),
                     message);
 
@@ -363,7 +367,7 @@ namespace MyMail.Models
                 };
 
                 //Сохраняем в базе письмо
-                _dBprovider.SaveObject(m);
+                await _dBprovider.SaveObject(m);
 
                 List<Mail> temp = _curentAccount.Mails.ToList();
                 temp.Insert(0, m);
@@ -381,7 +385,7 @@ namespace MyMail.Models
                         };
 
                         //Сохраням атач и прикрепляем к письму
-                        _dBprovider.SaveObject(att);
+                        await _dBprovider.SaveObject(att);
 
                         m.Attachments.ToList().Add(att);
                     }
@@ -430,7 +434,7 @@ namespace MyMail.Models
         //Отправка
         //----------------------------------------------------------------------------------------------
         //Переделать для нескольких отправителей и добавить вложения
-        public Mail SendMessage(string text, string subject, string to, bool needSign)
+        public async Task<Mail> SendMessage(string text, string subject, string to, bool needSign)
         {
             try
             {
@@ -446,9 +450,9 @@ namespace MyMail.Models
                 //Отправить письмо
                 _mailSender.CreateMessage(text, false, subject);
                 _mailSender.AddReceivers(to);
-                _mailSender.SendMessage();
+                await _mailSender.SendMessageAsync();
 
-                var nmail = _saveOutgoingMessage(text, subject, to);
+                var nmail = await _saveOutgoingMessage(text, subject, to);
 
                 return nmail;
             }
@@ -460,7 +464,7 @@ namespace MyMail.Models
             }
         }
 
-        private Mail _saveOutgoingMessage(string text, string subject, string to)
+        private async Task<Mail> _saveOutgoingMessage(string text, string subject, string to)
         {
             //Задаем uid
             var uidStr = _createUid();
@@ -483,7 +487,7 @@ namespace MyMail.Models
             }
 
             //Сохранить на диск
-            _driveProvider.SaveMessage(
+            await _driveProvider.SaveMessage(
                 Path.Combine(_curentAccount.LocalPath, Enum.GetName(typeof (State), State.Outgoing)),
                 nmess);
 
@@ -497,7 +501,7 @@ namespace MyMail.Models
                 Key = new List<SymmKey>()
             };
 
-            _dBprovider.SaveObject(nmail);
+            await _dBprovider.SaveObject(nmail);
 
             lock (_curentAccount.MailAddress)
             {
@@ -520,7 +524,7 @@ namespace MyMail.Models
         }
 
         //Отправка шифрованного сообщения
-        public bool SendEncryptedMessage(string text, string subject, string to, bool needSign)
+        public async Task<bool> SendEncryptedMessage(string text, string subject, string to, bool needSign)
         {
 //            string ntext = _cryptoProvider.EncrytpData(Encoding.ASCII.GetBytes(text));
             string ntext = _cryptoProvider.EncrytpData(Encoding.UTF8.GetBytes(text));
@@ -530,7 +534,7 @@ namespace MyMail.Models
             string IV = Convert.ToBase64String(_cryptoProvider.Des.IV);
 
 
-            AsymmKey key = _dBprovider.GetAsymmKey(to);
+            AsymmKey key = await _dBprovider.GetAsymmKey(to);
 
             if (key == null)
                 return false;
@@ -551,7 +555,7 @@ namespace MyMail.Models
 
             symmKeys += ntext;
 
-            var nmail = SendMessage(symmKeys, nsubject, to, false);
+            var nmail = await SendMessage(symmKeys, nsubject, to, false);
 
             //Сохранение ключей
             SymmKey nsymm = new SymmKey
@@ -561,7 +565,7 @@ namespace MyMail.Models
                 EncryptedMail = nmail
             };
 
-            _dBprovider.SaveObject(nsymm);
+            await _dBprovider.SaveObject(nsymm);
 
             nmail.Key.ToList().Add(nsymm);
 

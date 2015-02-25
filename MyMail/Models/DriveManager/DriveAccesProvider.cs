@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Web;
 using System.Xml.Serialization;
 using MyMail.Infrastructure;
@@ -37,62 +38,71 @@ namespace MyMail.Models.DriveManager
             return path;
         }
 
-        public IEnumerable<Message_obj> getSavedMessages(string folderPath, IEnumerable<string> uids)
+        public Task<IEnumerable<Message_obj>> getSavedMessages(string folderPath, IEnumerable<string> uids)
         {
-            DirectoryInfo dirInfo = new DirectoryInfo(folderPath);
-            List<Message_obj> messages = new List<Message_obj>();
-
-            foreach (string uid in uids.ToArray())
+            return Task.Factory.StartNew(() =>
             {
-                //Папачка письма
-                DirectoryInfo messageDirectory = new DirectoryInfo(
-                    Path.Combine(folderPath, uid)
-                    );
+                DirectoryInfo dirInfo = new DirectoryInfo(folderPath);
+                List<Message_obj> messages = new List<Message_obj>();
 
-                FileInfo file = null;
-                FileInfo[] files = messageDirectory.GetFiles()
-                    .Where(p => p.Name == string.Format("{0}.xml", uid))
-                    .Select(p => p).ToArray();
-
-                //Если письмо в базе есть, а физически его нет, то пока просто пропустить его
-                //По хорошему надо как то обрабатывать
-                if(files.Length == 0)
-                    continue;
-                else
+//                foreach (string uid in uids.ToArray())
+                object locker = new object();
+                Parallel.ForEach(uids.ToArray(), uid =>
                 {
-                    file = files.First();
-                }
+                    //Папачка письма
+                    DirectoryInfo messageDirectory = new DirectoryInfo(
+                        Path.Combine(folderPath, uid)
+                        );
 
-                //Грузим из xml файла
-                var message = _loadXmlMessage(file.FullName);
+                    FileInfo file = null;
+                    FileInfo[] files = messageDirectory.GetFiles()
+                        .Where(p => p.Name == string.Format("{0}.xml", uid))
+                        .Select(p => p).ToArray();
 
-                //Загрузка атачей
-                FileInfo[] allFiles = messageDirectory.GetFiles();
-
-                //Если в папке толко письмо
-                if (allFiles.Length > 1)
-                    message.Attachments = new List<Attachment>();
-
-                //Грузим каждый атач и добавляем к письму
-                foreach (FileInfo attach in allFiles)
-                {
-                    //Если это письмо - пропускаем
-                    if (attach.Name == string.Format("{0}.xml", message.Uid))
-                        continue;
-
-                    MemoryStream attachData = new MemoryStream(File.ReadAllBytes(attach.FullName));
-
-                    message.Attachments.Add(new Attachment
+                    //Если письмо в базе есть, а физически его нет, то пока просто пропустить его
+                    //По хорошему надо как то обрабатывать
+                    if (files.Length == 0)
+//                        continue;
+                        return;
+                    else
                     {
-                        Data = attachData,
-                        Name = attach.Name
-                    });
-                }
+                        file = files.First();
+                    }
 
-                messages.Add(message);
-            }
+                    //Грузим из xml файла
+                    var message = _loadXmlMessage(file.FullName);
 
-            return messages;
+                    //Загрузка атачей
+                    FileInfo[] allFiles = messageDirectory.GetFiles();
+
+                    //Если в папке толко письмо
+                    if (allFiles.Length > 1)
+                        message.Attachments = new List<Attachment>();
+
+                    //Грузим каждый атач и добавляем к письму
+                    foreach (FileInfo attach in allFiles)
+                    {
+                        //Если это письмо - пропускаем
+                        if (attach.Name == string.Format("{0}.xml", message.Uid))
+                            continue;
+
+                        MemoryStream attachData = new MemoryStream(File.ReadAllBytes(attach.FullName));
+
+                        message.Attachments.Add(new Attachment
+                        {
+                            Data = attachData,
+                            Name = attach.Name
+                        });
+                    }
+
+                    lock (locker)
+                    {
+                        messages.Add(message);
+                    }
+                });
+
+                return messages.AsEnumerable();
+            });
         }
 
         private Message_obj _loadXmlMessage(string fileName)
@@ -107,41 +117,45 @@ namespace MyMail.Models.DriveManager
             return message;
         }
 
-        public void SaveMessage(string path, Message_obj message)
+        public Task SaveMessage(string path, Message_obj message)
         {
-            path = Path.Combine(path, message.Uid);
-            Directory.CreateDirectory(path);
-
-            if (message.Attachments != null)
+            return Task.Factory.StartNew(() =>
             {
-                byte[] temp = new byte[2000];
+                path = Path.Combine(path, message.Uid);
+                Directory.CreateDirectory(path);
 
-                //Записываем все атачи, если они есть
-                foreach (NetWork.MailReciever.Attachment attach in message.Attachments)
+                if (message.Attachments != null)
                 {
-                    attach.Name = attach.Name.CleanString();
+                    byte[] temp = new byte[2000];
 
-                    FileInfo fileName = new FileInfo(Path.Combine(path, attach.Name));
-
-                    FileStream writer = new FileStream(fileName.FullName, FileMode.Create);
-
-                    int readBytes = 0;
-
-                    attach.Data.Position = 0;
-
-                    do
+                    //Записываем все атачи, если они есть
+//                    foreach (NetWork.MailReciever.Attachment attach in message.Attachments)
+                    Parallel.ForEach(message.Attachments, attach =>
                     {
-                        readBytes = attach.Data.Read(temp, 0, temp.Length);
-                        writer.Write(temp, 0, readBytes);
+                        attach.Name = attach.Name.CleanString();
 
-                    } while (readBytes != 0);
+                        FileInfo fileName = new FileInfo(Path.Combine(path, attach.Name));
 
-                    writer.Close();
+                        FileStream writer = new FileStream(fileName.FullName, FileMode.Create);
+
+                        int readBytes = 0;
+
+                        attach.Data.Position = 0;
+
+                        do
+                        {
+                            readBytes = attach.Data.Read(temp, 0, temp.Length);
+                            writer.Write(temp, 0, readBytes);
+
+                        } while (readBytes != 0);
+
+                        writer.Close();
+                    });
                 }
-            }
 
-            //Сериализуем и сохраняем письмо
-            _saveXmlMessage(path, message);
+                //Сериализуем и сохраняем письмо
+                _saveXmlMessage(path, message);
+            });
         }
 
         private void _saveXmlMessage(string path, Message_obj message)

@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Web;
 using MyMail.Models.Entities;
 using NHibernate;
 using NHibernate.Cfg;
 using NHibernate.Linq;
+using Ninject.Infrastructure.Language;
 
 namespace MyMail.Models.DBmanager
 {
@@ -21,114 +23,134 @@ namespace MyMail.Models.DBmanager
             _sessionFactory = configuration.BuildSessionFactory();
         }
 
-        public User GetUser(string login)
+        public Task<User> GetUser(string login)
         {
-            using (var session = _sessionFactory.OpenSession())
-            {
-                using (var transaction = session.BeginTransaction())
-                {
-                    User[] user = 
-                        (from us in session.Query<User>() where us.Login.Equals(login) select us).ToArray();
-
-                    return user.Length == 0 ? null : user.First();
-                }
-            }
-        }
-
-        public Account GetAccount(string email)
-        {
-            using (var session = _sessionFactory.OpenSession())
-            {
-                using (var transaction = session.BeginTransaction())
-                {
-                    Account[] account =
-                        (from acc in session.Query<Account>() where acc.MailAddress == email select acc).ToArray();
-
-                    return account.Length == 0 ? null : account.First();
-                }
-            }
-        }
-
-        public IEnumerable<Account> GetUsersAccounts(string login)
-        {
-            using (var session = _sessionFactory.OpenSession())
-            {
-                using (var transaction = session.BeginTransaction())
-                {
-                    return (from acc in session.Query<Account>() where acc.AccountUser.Login == login select acc).ToArray();
-                }
-            }
-        }
-
-        public AsymmKey GetAsymmKey(string email)
-        {
-            try
+            return Task.Factory.StartNew(() =>
             {
                 using (var session = _sessionFactory.OpenSession())
                 {
                     using (var transaction = session.BeginTransaction())
                     {
-                        var key = (from acc in session.Query<Account>()
-                            where acc.MailAddress == email
-                            select acc.Key).ToList();
+                        User[] user =
+                            (from us in session.Query<User>() where us.Login.Equals(login) select us).ToArray();
 
-                        if (key != null || key.ToList().Count != 0)
+                        return user.Length == 0 ? null : user.First();
+                    }
+                }
+            });
+        }
+
+        public Task<Account> GetAccount(string email)
+        {
+            return Task.Factory.StartNew(() =>
+            {
+                using (var session = _sessionFactory.OpenSession())
+                {
+                    using (var transaction = session.BeginTransaction())
+                    {
+                        Account[] account =
+                            (from acc in session.Query<Account>() where acc.MailAddress == email select acc).ToArray();
+
+                        return account.Length == 0 ? null : account.First();
+                    }
+                }
+            });
+        }
+
+        public Task<IEnumerable<Account>> GetUsersAccounts(string login)
+        {
+                return Task.Factory.StartNew(() =>
+                {
+                    using (var session = _sessionFactory.OpenSession())
+                    {
+                        using (var transaction = session.BeginTransaction())
                         {
-                            return key[0].First();
+                            return
+                                (from acc in session.Query<Account>() where acc.AccountUser.Login == login select acc)
+                                    .ToArray().AsEnumerable();
                         }
-                        else
+                    }
+                });
+        }
+
+        public Task<AsymmKey> GetAsymmKey(string email)
+        {
+            return Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    using (var session = _sessionFactory.OpenSession())
+                    {
+                        using (var transaction = session.BeginTransaction())
                         {
-                            throw new Exception();
+                            var key = (from acc in session.Query<Account>()
+                                where acc.MailAddress == email
+                                select acc.Key).ToList();
+
+                            if (key != null || key.ToList().Count != 0)
+                            {
+                                return key[0].First();
+                            }
+                            else
+                            {
+                                throw new Exception();
+                            }
                         }
                     }
                 }
-            }
-            catch (Exception ex)
-            {
+                catch (Exception ex)
+                {
 //                throw ex;
-                return null;
-            }
+                    return null;
+                }
+            });
         }
 
-        public SignKey GetSignKey(string email)
+        public Task<SignKey> GetSignKey(string email)
         {
-            try
+            return Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    using (var session = _sessionFactory.OpenSession())
+                    {
+                        using (var transaction = session.BeginTransaction())
+                        {
+                            var signKey = session.Query<Account>()
+                                .Where(acc => acc.MailAddress == email)
+                                .Select(acc => acc.Sign).ToList();
+
+                            if (signKey.Count != 0)
+                            {
+                                return signKey[0].First();
+                            }
+                            else
+                            {
+                                throw new Exception();
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    throw ex;
+                }
+            });
+        }
+
+        public Task SaveObject(Object obj)
+        {
+            return Task.Factory.StartNew(() =>
             {
                 using (var session = _sessionFactory.OpenSession())
                 {
                     using (var transaction = session.BeginTransaction())
                     {
-                        var signKey = session.Query<Account>()
-                            .Where(acc => acc.MailAddress == email)
-                            .Select(acc => acc.Sign).ToList();
-
-                        if (signKey.Count != 0)
-                        {
-                            return signKey[0].First();
-                        }
-                        else
-                        {
-                            throw new Exception();
-                        }
+                        session.Save(obj);
+                        transaction.Commit();
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-        }
-
-        public void SaveObject(Object obj)
-        {
-            using (var session = _sessionFactory.OpenSession())
-            {
-                using (var transaction = session.BeginTransaction())
-                {
-                    session.Save(obj);
-                    transaction.Commit();
-                }
-            }
+            });
         }
     }
 }

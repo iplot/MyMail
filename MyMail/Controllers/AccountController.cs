@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
 using System.Web.Security;
@@ -31,12 +32,12 @@ namespace MyMail.Controllers
         }
 
         [HttpPost]
-        public ActionResult Login(User user)
+        public async Task<ActionResult> Login(User user)
         {
             if (!ModelState.IsValid)
                 return View();
 
-            if (_provider.IsUserPresent(user.Login, user.Password))
+            if (await _provider.IsUserPresent(user.Login, user.Password))
             {
                 FormsAuthentication.SetAuthCookie(user.Login, false);
                 System.Web.HttpContext.Current.Session["Login"] = user.Login;
@@ -57,13 +58,13 @@ namespace MyMail.Controllers
 
         //Заменить параметры на модель и наложить Validation на свойства (а может и ненадо, решу еще)
         [HttpPost]
-        public ActionResult SignUp(User user)
+        public async Task<ActionResult> SignUp(User user)
         {
             if (!ModelState.IsValid)
                 return View();
 
             //Если логин уже есть в системе, ничего не делать и вернуть пользователя обратно к форме
-            if(_provider.AddUser(user))
+            if(await _provider.AddUser(user))
             {
                 System.Web.HttpContext.Current.Session["Login"] = user.Login;
 
@@ -88,12 +89,12 @@ namespace MyMail.Controllers
         }
 
         [HttpPost]
-        public ActionResult AddServerAccount(Account acc)
+        public async Task<ActionResult> AddServerAccount(Account acc)
         {
             if (!ModelState.IsValid)
                 return View();
 
-            if (_provider.AddAccount(acc, (string) System.Web.HttpContext.Current.Session["Login"]))
+            if (await _provider.AddAccount(acc, (string) System.Web.HttpContext.Current.Session["Login"]))
             {
                 return RedirectToAction("Index", "Home");
             }

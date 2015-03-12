@@ -41,11 +41,24 @@ namespace MyMail.Controllers
             return View();
         }
 
-        public PartialViewResult GetMails(State mailsType)
+        public ActionResult GetMails(State mailsType)
         {
-            ViewBag.State = Enum.GetName(typeof (State), mailsType);
+            if (Request.IsAjaxRequest())
+            {
+                return Json(new
+                {
+                    State = Enum.GetName(typeof (State), mailsType),
+                    Mails = _serviceManager.GetMessages(mailsType)
+                        .Select(m => new{Email = (mailsType == State.Incoming ? m.From : m.To), Subject = m.Subject, Date = m.Date})
+                }, "application/json", JsonRequestBehavior.AllowGet);
+            }
+            else
+            {
+                ViewBag.State = Enum.GetName(typeof(State), mailsType);
 
-            return PartialView(_serviceManager.GetMessages(mailsType));
+                return PartialView(_serviceManager.GetMessages(mailsType));
+            }
+            
         }
 
         public PartialViewResult PrepareSend()

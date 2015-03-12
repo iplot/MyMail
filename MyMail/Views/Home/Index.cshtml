@@ -4,7 +4,7 @@
     ViewBag.Title = "MyMail";
     AjaxOptions opts = new AjaxOptions
     {
-        UpdateTargetId = "contentDiv"
+        OnSuccess = "viewMail"
     };
 }
 
@@ -40,11 +40,13 @@
                 Write
             </button>
 
-            <div class="list-group" style = "text-align: center; margin-top: 10px;">
+            <div class="list-group" style="text-align: center; margin-top: 10px;">
+@*                <button onclick="testSend()">TestInc</button>*@
                 @Ajax.ActionLink("Incoming", "GetMails", new {mailsType = State.Incoming}, opts,
-                    new {@class = "list-group-item active",  data_type = "Incoming"})
+                    new {@class = "list-group-item active", data_type = "Incoming"})
+
                 @Ajax.ActionLink("Outgoing", "GetMails", new {mailsType = State.Outgoing}, opts,
-                    new { @class = "list-group-item", onclick = "menuItemSelected()", data_type = "Outgoing" })
+                    new {@class = "list-group-item", data_type = "Outgoing"})
             </div>
         </div>
 
@@ -56,7 +58,6 @@
         </div>
     </div>  
 </div>
-
 
 @section Scripts{
     <script src="~/Scripts/jquery-2.1.3.js"></script>

@@ -24,6 +24,7 @@ $(document).ready(function () {
             dataType: "html"
         });
     });
+
 });
 
 function writeMessage() {
@@ -47,4 +48,31 @@ function sendMessage() {
         function(success) {
             alert(success);
         }, "text");
+}
+
+function viewMail(data) {
+    var html =
+        '<table class="table table-hover table-striped">' +
+            '<thead>' +
+            '<tr><th>' + (data.State == 'Incoming' ? 'From' : 'To') + '</th> <th>Subject</th> <th>Date</th></tr>' +
+            '</thead>' +
+            '<tbody>';
+
+    $(data.Mails).each(function(i, el) {
+        html += '<tr><td>' + el.Email + '</td> <td>' + el.Subject + '</td> <td>' + el.Date + '</td></tr>';
+    });
+
+    html += '</tbody></table>';
+
+    $('#contentDiv').html(html);
+}
+
+function testSend() {
+//    $.get('../Home/GetMails', { 'mailsType': 'Incoming' }, viewMail, 'json');
+    $.ajax("../Home/GetMails", {
+        data: { 'mailsType': 'Incoming' },
+        success: viewMail,
+        type: 'json',
+        timeout: 5000000
+    });
 }

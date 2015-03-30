@@ -126,16 +126,15 @@ namespace MyMail.Models
 
             //Получаем сообщения
             //Cтоит подумать о асинхронности
-            _localMessages = (await _getSavedMessages(State.Incoming)).ToList();
-            _localMessages.AddRange(
-                (await _getSavedMessages(State.Outgoing))
-                .ToList());
+            _localMessages = new List<Message_obj>();
+            Task t = new Task(_getSavedMessages);
+            t.Start();
+//            _localMessages = (await _getSavedMessages(State.Incoming)).ToList();
+//            _localMessages.AddRange(
+//                (await _getSavedMessages(State.Outgoing))
+//                .ToList());
 
-            //Сортируем письма в акаунте и локальном списке
-            _localMessages.Sort(new MailsComparator());
-            List<Mail> mails = _curentAccount.Mails.ToList();
-            mails.Sort(new MailsComparator());
-            _curentAccount.Mails = mails;
+            
 
             //Если слушатель не работает - включить
             if (!_backgroundListener.IsAlive)
@@ -272,19 +271,26 @@ namespace MyMail.Models
         //Возможно сделать асинхронным
         //Внутреннее получение писем. Когда выбирается аккаунт надо загрузить уже записанные письма
         //Не путать с получением писем для выдачи пользователю
-        private async Task<IEnumerable<Message_obj>> _getSavedMessages(State state)
+        private async void _getSavedMessages()
         {
             if (_curentAccount.Mails.ToArray().Length == 0)
-                return new List<Message_obj>();
+                return;
 
-            var uids = _curentAccount.Mails.Where(m => m.MailState == state).Select(m => m.Uid).ToArray();
+            var uids = _curentAccount.Mails.Where(m => m.MailState == State.Incoming).Select(m => m.Uid).ToArray();
 
             IEnumerable<Message_obj> mails = await _driveProvider.getSavedMessages(
-                Path.Combine(_curentAccount.LocalPath, Enum.GetName(typeof (State), state)),
+                Path.Combine(_curentAccount.LocalPath, Enum.GetName(typeof (State), State.Incoming)),
                 uids
                 );
 
-            return mails;
+            _localMessages = mails.ToList();
+
+            //Сортируем письма в акаунте и локальном списке
+            _localMessages.Sort(new MailsComparator());
+            List<Mail> mailUids = _curentAccount.Mails.ToList();
+            mailUids.Sort(new MailsComparator());
+            _curentAccount.Mails = mailUids;
+
         }
 
         //!!!!
